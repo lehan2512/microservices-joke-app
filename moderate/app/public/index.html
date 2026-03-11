@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderate Jokes</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; }
+        .btn { padding: 10px 15px; border: none; cursor: pointer; font-size: 16px; margin: 5px; }
+        .btn-approve { background-color: #28a745; color: white; }
+        .btn-reject { background-color: #dc3545; color: white; }
+        #statusMessage { font-weight: bold; color: #555; margin-bottom: 20px; }
+        #moderationArea { display: none; border: 1px solid #ccc; padding: 20px; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <h2>Joke Moderator Dashboard</h2>
+    <div id="statusMessage">Checking for new jokes...</div>
+
+    <div id="moderationArea">
+        <div class="form-group">
+            <label for="setup">Setup (Editable):</label>
+            <input type="text" id="setup">
+        </div>
+        <div class="form-group">
+            <label for="punchline">Punchline (Editable):</label>
+            <input type="text" id="punchline">
+        </div>
+        <div class="form-group">
+            <label for="typeSelect">Type (Override):</label>
+            <select id="typeSelect"></select>
+        </div>
+        <div class="form-group">
+            <label for="newType">Or Enter Custom Type:</label>
+            <input type="text" id="newType" placeholder="Leave blank to use dropdown selection">
+        </div>
+
+        <button class="btn btn-approve" onclick="submitModerated()">Approve & Send to DB</button>
+        <button class="btn btn-reject" onclick="rejectJoke()">Reject & Fetch Next</button>
+    </div>
+
+    <script>
+        let pollingInterval;
+
+        async function loadTypes() {
+            try {
+                const response = await fetch('/types');
+                const types = await response.json();
+                const select = document.getElementById('typeSelect');
+                select.innerHTML = '';
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading types cache");
+            }
+        }
+
+        async function pollForJokes() {
+            try {
+                const response = await fetch('/moderate');
+                if (response.status === 200) {
+                    const joke = await response.json();
+                    
+                    // Stop polling, display the joke
+                    clearInterval(pollingInterval);
+                    document.getElementById('statusMessage').innerText = "Joke requires moderation!";
+                    document.getElementById('moderationArea').style.display = 'block';
+                    
+                    document.getElementById('setup').value = joke.setup;
+                    document.getElementById('punchline').value = joke.punchline;
+                    
+                    // Set the dropdown to the submitted type if it exists, otherwise leave it
+                    const typeSelect = document.getElementById('typeSelect');
+                    if (Array.from(typeSelect.options).some(opt => opt.value === joke.type)) {
+                        typeSelect.value = joke.type;
+                    } else {
+                        document.getElementById('newType').value = joke.type;
+                    }
+                } else if (response.status === 204) {
+                    document.getElementById('statusMessage').innerText = "Queue is empty. Polling for new jokes...";
+                    document.getElementById('moderationArea').style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('statusMessage').innerText = "Error connecting to server.";
+            }
+        }
+
+        async function submitModerated() {
+            const setup = document.getElementById('setup').value.trim();
+            const punchline = document.getElementById('punchline').value.trim();
+            const selectedType = document.getElementById('typeSelect').value;
+            const newType = document.getElementById('newType').value.trim();
+            
+            const finalType = newType !== "" ? newType : selectedType;
+
+            await fetch('/moderated', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ setup, punchline, type: finalType })
+            });
+
+            startPolling(); // Go back to checking for the next joke
+        }
+
+        function rejectJoke() {
+            // Since we used noAck: true, the joke is already off the queue. 
+            // Rejecting just means we don't send it to the 'moderated' queue and move on.
+            startPolling();
+        }
+
+        function startPolling() {
+            document.getElementById('moderationArea').style.display = 'none';
+            document.getElementById('setup').value = '';
+            document.getElementById('punchline').value = '';
+            document.getElementById('newType').value = '';
+            
+            loadTypes(); // Refresh types before polling
+            pollForJokes(); // Check immediately
+            pollingInterval = setInterval(pollForJokes, 1000); // Then every 1 second
+        }
+
+        // Initialize
+        loadTypes().then(startPolling);
+    </script>
+</body>
+</html>

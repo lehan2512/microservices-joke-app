@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit a Joke</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #218838; }
+        #message { margin-top: 15px; font-weight: bold; text-align: center; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>Submit a New Joke</h2>
+    
+    <div class="form-group">
+        <label for="setup">Joke Setup:</label>
+        <input type="text" id="setup" placeholder="Why did the chicken..." required>
+    </div>
+
+    <div class="form-group">
+        <label for="punchline">Punchline:</label>
+        <input type="text" id="punchline" placeholder="To get to the..." required>
+    </div>
+
+    <div class="form-group">
+        <label for="typeSelect">Joke Type:</label>
+        <select id="typeSelect" onchange="toggleNewTypeInput()">
+            <option value="new_type_option">+ Create New Type</option>
+        </select>
+    </div>
+
+    <div class="form-group hidden" id="newTypeGroup">
+        <label for="newType">Enter New Type:</label>
+        <input type="text" id="newType" placeholder="e.g., knock-knock">
+    </div>
+
+    <button onclick="submitJoke()">Submit Joke</button>
+
+    <div id="message"></div>
+
+    <script>
+        async function loadTypes() {
+            try {
+                const response = await fetch('/types');
+                const types = await response.json();
+                const select = document.getElementById('typeSelect');
+                
+                // Clear existing options except the "Create New"
+                select.innerHTML = '<option value="new_type_option">+ Create New Type</option>';
+                
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                    select.insertBefore(option, select.lastChild);
+                });
+                select.selectedIndex = 0; // Default to first available type
+            } catch (error) {
+                console.error("Error loading types cache", error);
+            }
+        }
+
+        function toggleNewTypeInput() {
+            const select = document.getElementById('typeSelect');
+            const newTypeGroup = document.getElementById('newTypeGroup');
+            if (select.value === 'new_type_option') {
+                newTypeGroup.classList.remove('hidden');
+            } else {
+                newTypeGroup.classList.add('hidden');
+            }
+        }
+
+        async function submitJoke() {
+            const setup = document.getElementById('setup').value.trim();
+            const punchline = document.getElementById('punchline').value.trim();
+            const typeSelect = document.getElementById('typeSelect').value;
+            const newType = document.getElementById('newType').value.trim();
+            const messageDiv = document.getElementById('message');
+
+            const finalType = (typeSelect === 'new_type_option') ? newType : typeSelect;
+
+            if (!setup || !punchline || !finalType) {
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = "Please fill out all fields!";
+                return;
+            }
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ setup, punchline, type: finalType })
+                });
+
+                if (response.ok) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.innerText = "Joke submitted successfully!";
+                    document.getElementById('setup').value = '';
+                    document.getElementById('punchline').value = '';
+                    document.getElementById('newType').value = '';
+                } else {
+                    throw new Error("Submission failed");
+                }
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = "Error submitting joke.";
+            }
+        }
+
+        // Initialize
+        loadTypes();
+    </script>
+</body>
+</html>

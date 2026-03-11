@@ -1,0 +1,42 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Submit Microservice API",
+    "version": "1.0.0",
+    "description": "API for submitting new jokes and retrieving joke types."
+  },
+  "paths": {
+    "/submit": {
+      "post": {
+        "summary": "Submit a new joke",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "setup": { "type": "string" },
+                  "punchline": { "type": "string" },
+                  "type": { "type": "string" }
+                },
+                "required": ["setup", "punchline", "type"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Joke accepted and queued for moderation" }
+        }
+      }
+    },
+    "/types": {
+      "get": {
+        "summary": "Retrieve available joke types from local cache",
+        "responses": {
+          "200": { "description": "A list of joke types" }
+        }
+      }
+    }
+  }
+}

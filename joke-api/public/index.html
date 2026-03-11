@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Service</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        select, button { padding: 10px; font-size: 16px; margin: 10px; }
+        #setup { font-size: 24px; font-weight: bold; margin-top: 20px; }
+        #punchline { font-size: 24px; color: green; margin-top: 10px; min-height: 30px; }
+    </style>
+</head>
+<body>
+
+    <h1>Get a Joke!</h1>
+    
+    <select id="typeSelect">
+        <option value="any">Any Type</option>
+        </select>
+    
+    <button onclick="fetchJoke()">Tell me a joke</button>
+
+    <div id="setup"></div>
+    <div id="punchline"></div>
+
+    <script>
+        // Populate dropdown on load and on interaction
+        async function loadTypes() {
+            const response = await fetch('/types');
+            const types = await response.json();
+            const select = document.getElementById('typeSelect');
+            
+            // Keep the "Any" option, clear the rest, then append
+            select.innerHTML = '<option value="any">Any Type</option>';
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                select.appendChild(option);
+            });
+        }
+
+        // Fetch types when the dropdown is clicked
+        document.getElementById('typeSelect').addEventListener('focus', loadTypes);
+
+        async function fetchJoke() {
+            const type = document.getElementById('typeSelect').value;
+            const setupDiv = document.getElementById('setup');
+            const punchlineDiv = document.getElementById('punchline');
+            
+            // Clear previous joke
+            setupDiv.innerText = "Thinking...";
+            punchlineDiv.innerText = "";
+
+            try {
+                const response = await fetch(`/joke/${type}?count=1`);
+                const jokes = await response.json();
+                
+                if (jokes.length > 0) {
+                    const joke = jokes[0];
+                    setupDiv.innerText = joke.setup;
+                    
+                    // Display punchline after 3 seconds
+                    setTimeout(() => {
+                        punchlineDiv.innerText = joke.punchline;
+                    }, 3000);
+                } else {
+                    setupDiv.innerText = "No jokes found for this category!";
+                }
+            } catch (error) {
+                setupDiv.innerText = "Error fetching joke.";
+            }
+        }
+
+        // Initial load
+        loadTypes();
+    </script>
+</body>
+</html>

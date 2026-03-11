@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: jokes_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: jokes_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    profiles:
+      - mysql
+
+  mongo:
+    image: mongo:latest
+    container_name: jokes_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db-init/init.js:/docker-entrypoint-initdb.d/init.js
+    profiles:
+      - mongo
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: jokes_rabbitmq
+    ports:
+      - "5672:5672"   # Message broker port
+      - "15672:15672" # Management UI port
