@@ -27,7 +27,7 @@
     <script>
         // Populate dropdown on load and on interaction
         async function loadTypes() {
-            const response = await fetch('/types');
+            const response = await fetch('/joke-api/types');
             const types = await response.json();
             const select = document.getElementById('typeSelect');
             
@@ -54,7 +54,7 @@
             punchlineDiv.innerText = "";
 
             try {
-                const response = await fetch(`/joke/${type}?count=1`);
+                const response = await fetch(`/joke-api/joke/${type}?count=1`);
                 const jokes = await response.json();
                 
                 if (jokes.length > 0) {

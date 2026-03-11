@@ -76,6 +76,24 @@ services:
     depends_on:
       - rabbitmq
 
+  kong:
+    image: kong:latest
+    container_name: kong_gateway
+    environment:
+      KONG_DATABASE: "off" # Runs Kong in DB-less mode
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yaml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./infra/api-gateway/kong.yaml:/kong/declarative/kong.yaml
+    depends_on:
+      - joke-api
+      - submit-app
+      - moderate-app
+
 volumes:
   mysql_data:
   mongo_data:

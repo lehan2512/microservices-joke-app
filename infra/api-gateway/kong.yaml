@@ -1,0 +1,33 @@
+_format_version: "3.0"
+services:
+  # 1. Joke API Service
+  - name: joke-service
+    url: http://joke_api:3001
+    routes:
+      - name: joke-route
+        paths:
+          - /joke-api
+        strip_path: true
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 5  # Set incredibly low (5 requests/min) so you can easily demonstrate it working
+          policy: local
+
+  # 2. Submit Microservice
+  - name: submit-service
+    url: http://submit_app:3002
+    routes:
+      - name: submit-route
+        paths:
+          - /submit-api
+        strip_path: true
+
+  # 3. Moderate Microservice
+  - name: moderate-service
+    url: http://moderate_app:3003
+    routes:
+      - name: moderate-route
+        paths:
+          - /moderate-api
+        strip_path: true

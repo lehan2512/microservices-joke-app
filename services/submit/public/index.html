@@ -48,7 +48,7 @@
     <script>
         async function loadTypes() {
             try {
-                const response = await fetch('/types');
+                const response = await fetch('/submit-api/types');
                 const types = await response.json();
                 const select = document.getElementById('typeSelect');
                 
@@ -93,7 +93,7 @@
             }
 
             try {
-                const response = await fetch('/submit', {
+                const response = await fetch('/submit-api/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ setup, punchline, type: finalType })

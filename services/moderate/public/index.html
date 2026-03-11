@@ -48,7 +48,7 @@
 
         async function loadTypes() {
             try {
-                const response = await fetch('/types');
+                const response = await fetch('/moderate-api/types');
                 const types = await response.json();
                 const select = document.getElementById('typeSelect');
                 select.innerHTML = '';
@@ -65,7 +65,7 @@
 
         async function pollForJokes() {
             try {
-                const response = await fetch('/moderate');
+                const response = await fetch('/moderate-api/moderate');
                 if (response.status === 200) {
                     const joke = await response.json();
                     
@@ -101,7 +101,7 @@
             
             const finalType = newType !== "" ? newType : selectedType;
 
-            await fetch('/moderated', {
+            await fetch('/moderate-api/moderated', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ setup, punchline, type: finalType })
