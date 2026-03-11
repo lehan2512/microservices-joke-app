@@ -2,7 +2,7 @@ require('dotenv').config();
 const amqp = require('amqplib');
 const db = require('./db');
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://127.0.0.1';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://jokes_rabbitmq';
 const MODERATED_QUEUE = 'moderated';
 const TYPE_UPDATE_EXCHANGE = 'type_update_exchange';
 

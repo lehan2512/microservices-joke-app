@@ -2,11 +2,15 @@ const amqp = require('amqplib');
 const fs = require('fs');
 const path = require('path');
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://127.0.0.1';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://jokes_rabbitmq';
 const SUBMIT_QUEUE = 'submit';
 const TYPE_UPDATE_EXCHANGE = 'type_update_exchange';
 const CACHE_QUEUE = 'sub_type_update'; // Unique queue for Submit's cache updates
-const CACHE_FILE = path.join(__dirname, 'types.json');
+const cacheDir = path.join(__dirname, 'cache');
+if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+}
+const CACHE_FILE = path.join(cacheDir, 'types.json');
 
 let channel;
 
