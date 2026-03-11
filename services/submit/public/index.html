@@ -4,46 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit a Joke</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { padding: 10px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; width: 100%; font-size: 16px; }
-        button:hover { background-color: #218838; }
-        #message { margin-top: 15px; font-weight: bold; text-align: center; }
+        :root {
+            /* IFS-inspired color palette */
+            --primary-purple: #4B1A70;
+            --primary-hover: #612B9F;
+            --background: #F4F5F7;
+            --surface: #FFFFFF;
+            --text-main: #172B4D;
+            --text-muted: #6B778C;
+            --success: #00875A;
+            --error: #DE350B;
+            --border: #DFE1E6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 12px 42px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary-purple);
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            background-color: #FAFBFC;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-purple);
+            background-color: var(--surface);
+            box-shadow: 0 0 0 3px rgba(75, 26, 112, 0.1);
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B778C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background-color: var(--primary-purple);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active { transform: translateY(0); }
+
+        button:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #message {
+            margin-top: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            min-height: 20px;
+            transition: opacity 0.5s ease;
+        }
+
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <h2>Submit a New Joke</h2>
-    
-    <div class="form-group">
-        <label for="setup">Joke Setup:</label>
-        <input type="text" id="setup" placeholder="Why did the chicken..." required>
+    <div class="container">
+        <div class="header">
+            <h2>Submit a New Joke</h2>
+        </div>
+        
+        <div class="form-group">
+            <label for="setup">Setup</label>
+            <input type="text" id="setup" placeholder="e.g: Why did the software engineer cross the road?" required>
+        </div>
+
+        <div class="form-group">
+            <label for="punchline">Punchline</label>
+            <input type="text" id="punchline" placeholder="e.g: To get to the other git branch." required>
+        </div>
+
+        <div class="form-group">
+            <label for="typeSelect">Joke Category</label>
+            <select id="typeSelect" onchange="toggleNewTypeInput()">
+                <option value="new_type_option">+ Create New Category</option>
+            </select>
+        </div>
+
+        <div class="form-group hidden" id="newTypeGroup">
+            <label for="newType">New Category Name</label>
+            <input type="text" id="newType" placeholder="e.g., programming">
+        </div>
+
+        <button id="submitBtn" onclick="submitJoke()">Submit Joke</button>
+
+        <div id="message"></div>
     </div>
-
-    <div class="form-group">
-        <label for="punchline">Punchline:</label>
-        <input type="text" id="punchline" placeholder="To get to the..." required>
-    </div>
-
-    <div class="form-group">
-        <label for="typeSelect">Joke Type:</label>
-        <select id="typeSelect" onchange="toggleNewTypeInput()">
-            <option value="new_type_option">+ Create New Type</option>
-        </select>
-    </div>
-
-    <div class="form-group hidden" id="newTypeGroup">
-        <label for="newType">Enter New Type:</label>
-        <input type="text" id="newType" placeholder="e.g., knock-knock">
-    </div>
-
-    <button onclick="submitJoke()">Submit Joke</button>
-
-    <div id="message"></div>
 
     <script>
         async function loadTypes() {
@@ -52,18 +178,19 @@
                 const types = await response.json();
                 const select = document.getElementById('typeSelect');
                 
-                // Clear existing options except the "Create New"
-                select.innerHTML = '<option value="new_type_option">+ Create New Type</option>';
+                select.innerHTML = '<option value="new_type_option">+ Create New Category</option>';
                 
                 types.forEach(type => {
                     const option = document.createElement('option');
                     option.value = type;
                     option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-                    select.insertBefore(option, select.lastChild);
+                    select.insertBefore(option, select.firstChild);
                 });
-                select.selectedIndex = 0; // Default to first available type
+                
+                select.selectedIndex = 0;
+                toggleNewTypeInput();
             } catch (error) {
-                console.error("Error loading types cache", error);
+                console.error("Error loading types", error);
             }
         }
 
@@ -78,43 +205,69 @@
         }
 
         async function submitJoke() {
-            const setup = document.getElementById('setup').value.trim();
-            const punchline = document.getElementById('punchline').value.trim();
-            const typeSelect = document.getElementById('typeSelect').value;
-            const newType = document.getElementById('newType').value.trim();
+            const setupField = document.getElementById('setup');
+            const punchlineField = document.getElementById('punchline');
+            const newTypeField = document.getElementById('newType');
+            const selectField = document.getElementById('typeSelect');
             const messageDiv = document.getElementById('message');
+            const btn = document.getElementById('submitBtn');
 
-            const finalType = (typeSelect === 'new_type_option') ? newType : typeSelect;
+            const finalType = (selectField.value === 'new_type_option') ? newTypeField.value.trim() : selectField.value;
 
-            if (!setup || !punchline || !finalType) {
-                messageDiv.style.color = 'red';
-                messageDiv.innerText = "Please fill out all fields!";
+            if (!setupField.value.trim() || !punchlineField.value.trim() || !finalType) {
+                messageDiv.style.color = 'var(--error)';
+                messageDiv.innerText = "Please complete all fields.";
                 return;
             }
+
+            btn.disabled = true;
+            messageDiv.style.opacity = "1";
+            messageDiv.innerText = "";
 
             try {
                 const response = await fetch('/submit-api/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ setup, punchline, type: finalType })
+                    body: JSON.stringify({ 
+                        setup: setupField.value.trim(), 
+                        punchline: punchlineField.value.trim(), 
+                        type: finalType 
+                    })
                 });
 
                 if (response.ok) {
-                    messageDiv.style.color = 'green';
-                    messageDiv.innerText = "Joke submitted successfully!";
-                    document.getElementById('setup').value = '';
-                    document.getElementById('punchline').value = '';
-                    document.getElementById('newType').value = '';
+                    messageDiv.style.color = 'var(--success)';
+                    messageDiv.innerText = "Success! Joke submitted for moderation.";
+                    
+                    // Clear inputs
+                    setupField.value = '';
+                    punchlineField.value = '';
+                    newTypeField.value = '';
+                    loadTypes();
+
+                    // Hide message after 5 seconds
+                    setTimeout(() => {
+                        messageDiv.style.opacity = "0";
+                        setTimeout(() => { messageDiv.innerText = ""; }, 500);
+                    }, 5000);
+
                 } else {
                     throw new Error("Submission failed");
                 }
             } catch (error) {
-                messageDiv.style.color = 'red';
-                messageDiv.innerText = "Error submitting joke.";
+                messageDiv.style.color = 'var(--error)';
+                messageDiv.innerText = "Submission error. Please try again.";
+                
+                // Also hide error message after 5 seconds
+                setTimeout(() => {
+                    messageDiv.style.opacity = "0";
+                    setTimeout(() => { messageDiv.innerText = ""; }, 500);
+                }, 5000);
+            } finally {
+                btn.disabled = false;
             }
         }
 
-        // Initialize
         loadTypes();
     </script>
 </body>

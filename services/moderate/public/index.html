@@ -4,44 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moderate Jokes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], select { width: 100%; padding: 8px; box-sizing: border-box; }
-        .btn { padding: 10px 15px; border: none; cursor: pointer; font-size: 16px; margin: 5px; }
-        .btn-approve { background-color: #28a745; color: white; }
-        .btn-reject { background-color: #dc3545; color: white; }
-        #statusMessage { font-weight: bold; color: #555; margin-bottom: 20px; }
-        #moderationArea { display: none; border: 1px solid #ccc; padding: 20px; background: #f9f9f9; }
+        :root {
+            --primary-purple: #4B1A70;
+            --primary-hover: #612B9F;
+            --background: #F4F5F7;
+            --surface: #FFFFFF;
+            --text-main: #172B4D;
+            --text-muted: #6B778C;
+            --success: #00875A;
+            --error: #be2d08;
+            --border: #DFE1E6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 12px 42px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary-purple);
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px; /* Slightly larger for readability */
+            font-family: 'Inter', sans-serif;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            background-color: #FAFBFC;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        /* Improved Read-Only Styles */
+        input:disabled, select:disabled {
+            background-color: #F0F2F5; /* Darker bg for better contrast */
+            color: var(--text-main) !important; /* Force readable text color */
+            -webkit-text-fill-color: var(--text-main); /* Fix for some browsers */
+            opacity: 1; /* Override default disabled opacity */
+            cursor: default;
+            border-color: #E2E4E9;
+        }
+
+        #moderationArea {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-divider {
+            margin: 32px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .button-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .primary-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-approve { background-color: var(--success); color: white; }
+        .btn-reject { background-color: var(--error); color: white; }
+        .btn-edit { background-color: #EBECF0; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-save { background-color: var(--primary-purple); color: white; }
+
+        .btn:hover:not(:disabled) {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background-color: #f4f5f7;
+            color: #A5ADBA;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        .hidden { display: none; }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B778C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        #emptyState {
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
 
-    <h2>Joke Moderator Dashboard</h2>
-    <div id="statusMessage">Checking for new jokes...</div>
-
-    <div id="moderationArea">
-        <div class="form-group">
-            <label for="setup">Setup (Editable):</label>
-            <input type="text" id="setup">
-        </div>
-        <div class="form-group">
-            <label for="punchline">Punchline (Editable):</label>
-            <input type="text" id="punchline">
-        </div>
-        <div class="form-group">
-            <label for="typeSelect">Type (Override):</label>
-            <select id="typeSelect"></select>
-        </div>
-        <div class="form-group">
-            <label for="newType">Or Enter Custom Type:</label>
-            <input type="text" id="newType" placeholder="Leave blank to use dropdown selection">
+    <div class="container">
+        <div class="header">
+            <h2>Joke Moderator</h2>
         </div>
 
-        <button class="btn btn-approve" onclick="submitModerated()">Approve & Send to DB</button>
-        <button class="btn btn-reject" onclick="rejectJoke()">Reject & Fetch Next</button>
+        <div id="emptyState">Polling for new jokes...</div>
+
+        <div id="moderationArea">
+            <div class="form-group">
+                <label for="setup">Setup</label>
+                <input type="text" id="setup" disabled>
+            </div>
+            <div class="form-group">
+                <label for="punchline">Punchline</label>
+                <input type="text" id="punchline" disabled>
+            </div>
+            <div class="form-group">
+                <label for="typeSelect">Type</label>
+                <select id="typeSelect" disabled onchange="handleTypeChange()"></select>
+            </div>
+            <div class="form-group">
+                <label for="newType">Custom Type</label>
+                <input type="text" id="newType" placeholder="None" disabled>
+            </div>
+
+            <div class="button-stack">
+                <button id="editBtn" class="btn btn-edit" onclick="enableEditing()">Edit Joke</button>
+                <button id="saveBtn" class="btn btn-save hidden" onclick="saveEdits()">Save Changes</button>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="primary-actions">
+                <button id="approveBtn" class="btn btn-approve" onclick="approveJoke()">Approve</button>
+                <button id="rejectBtn" class="btn btn-reject" onclick="rejectJoke()">Reject</button>
+            </div>
+        </div>
     </div>
+
+    <div id="toast"></div>
 
     <script>
         let pollingInterval;
@@ -59,75 +256,142 @@
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error("Error loading types cache");
+                console.error("Error loading types");
             }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.style.backgroundColor = isError ? "var(--error)" : "var(--success)";
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function handleTypeChange() {
+            const select = document.getElementById('typeSelect');
+            const customInput = document.getElementById('newType');
+            if (select.value === "detected_new" && !select.disabled) {
+                customInput.disabled = false;
+            } else {
+                customInput.disabled = true;
+            }
+        }
+
+        function toggleActionButtons(disabled) {
+            document.getElementById('approveBtn').disabled = disabled;
+            document.getElementById('rejectBtn').disabled = disabled;
+        }
+
+        function enableEditing() {
+            document.getElementById('setup').disabled = false;
+            document.getElementById('punchline').disabled = false;
+            document.getElementById('typeSelect').disabled = false;
+            handleTypeChange();
+            
+            document.getElementById('editBtn').classList.add('hidden');
+            document.getElementById('saveBtn').classList.remove('hidden');
+            toggleActionButtons(true);
+        }
+
+        function saveEdits() {
+            const inputs = ['setup', 'punchline', 'typeSelect', 'newType'];
+            inputs.forEach(id => document.getElementById(id).disabled = true);
+            
+            document.getElementById('editBtn').classList.remove('hidden');
+            document.getElementById('saveBtn').classList.add('hidden');
+            toggleActionButtons(false);
+            showToast("Changes saved locally");
         }
 
         async function pollForJokes() {
             try {
                 const response = await fetch('/moderate-api/moderate');
+                const modArea = document.getElementById('moderationArea');
+                const emptyState = document.getElementById('emptyState');
+
                 if (response.status === 200) {
                     const joke = await response.json();
-                    
-                    // Stop polling, display the joke
                     clearInterval(pollingInterval);
-                    document.getElementById('statusMessage').innerText = "Joke requires moderation!";
-                    document.getElementById('moderationArea').style.display = 'block';
+                    
+                    emptyState.classList.add('hidden');
+                    modArea.style.display = 'block';
                     
                     document.getElementById('setup').value = joke.setup;
                     document.getElementById('punchline').value = joke.punchline;
                     
-                    // Set the dropdown to the submitted type if it exists, otherwise leave it
+                    const inputs = ['setup', 'punchline', 'typeSelect', 'newType'];
+                    inputs.forEach(id => document.getElementById(id).disabled = true);
+                    
+                    document.getElementById('editBtn').classList.remove('hidden');
+                    document.getElementById('saveBtn').classList.add('hidden');
+                    toggleActionButtons(false);
+                    
                     const typeSelect = document.getElementById('typeSelect');
-                    if (Array.from(typeSelect.options).some(opt => opt.value === joke.type)) {
+                    const newTypeInput = document.getElementById('newType');
+                    const typeExists = Array.from(typeSelect.options).some(opt => opt.value === joke.type);
+
+                    if (typeExists) {
                         typeSelect.value = joke.type;
+                        newTypeInput.value = "";
                     } else {
-                        document.getElementById('newType').value = joke.type;
+                        const tempOption = document.createElement('option');
+                        tempOption.value = "detected_new";
+                        tempOption.textContent = "New Type";
+                        tempOption.id = "tempNewOption";
+                        typeSelect.appendChild(tempOption);
+                        typeSelect.value = "detected_new";
+                        newTypeInput.value = joke.type;
                     }
                 } else if (response.status === 204) {
-                    document.getElementById('statusMessage').innerText = "Queue is empty. Polling for new jokes...";
-                    document.getElementById('moderationArea').style.display = 'none';
+                    emptyState.classList.remove('hidden');
+                    modArea.style.display = 'none';
                 }
             } catch (error) {
-                document.getElementById('statusMessage').innerText = "Error connecting to server.";
+                console.error("Polling error");
             }
         }
 
-        async function submitModerated() {
+        function startPolling() {
+            const tempOpt = document.getElementById('tempNewOption');
+            if (tempOpt) tempOpt.remove();
+            
+            document.getElementById('moderationArea').style.display = 'none';
+            document.getElementById('emptyState').classList.remove('hidden');
+            loadTypes();
+            pollForJokes();
+            pollingInterval = setInterval(pollForJokes, 5000);
+        }
+
+        async function approveJoke() {
             const setup = document.getElementById('setup').value.trim();
             const punchline = document.getElementById('punchline').value.trim();
             const selectedType = document.getElementById('typeSelect').value;
             const newType = document.getElementById('newType').value.trim();
-            
-            const finalType = newType !== "" ? newType : selectedType;
+            const finalType = (selectedType === 'detected_new') ? newType : selectedType;
 
-            await fetch('/moderate-api/moderated', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ setup, punchline, type: finalType })
-            });
-
-            startPolling(); // Go back to checking for the next joke
+            try {
+                const response = await fetch('/moderate-api/moderated', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ setup, punchline, type: finalType })
+                });
+                if (response.ok) {
+                    showToast("Joke Approved!");
+                    startPolling();
+                } else {
+                    showToast("Approval failed", true);
+                }
+            } catch (e) {
+                showToast("Connection error", true);
+            }
         }
 
         function rejectJoke() {
-            // Since we used noAck: true, the joke is already off the queue. 
-            // Rejecting just means we don't send it to the 'moderated' queue and move on.
+            showToast("Joke Rejected", true);
             startPolling();
         }
 
-        function startPolling() {
-            document.getElementById('moderationArea').style.display = 'none';
-            document.getElementById('setup').value = '';
-            document.getElementById('punchline').value = '';
-            document.getElementById('newType').value = '';
-            
-            loadTypes(); // Refresh types before polling
-            pollForJokes(); // Check immediately
-            pollingInterval = setInterval(pollForJokes, 1000); // Then every 1 second
-        }
-
-        // Initialize
         loadTypes().then(startPolling);
     </script>
 </body>
