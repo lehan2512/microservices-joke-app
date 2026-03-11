@@ -8,7 +8,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./infra/db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
     profiles:
       - mysql
 
@@ -18,7 +18,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./infra/db-init/init.js:/docker-entrypoint-initdb.d/init.js
+      - ./db-init/init.js:/docker-entrypoint-initdb.d/init.js
     profiles:
       - mongo
 
