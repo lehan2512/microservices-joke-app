@@ -1,6 +1,21 @@
 require('dotenv').config();
-const amqp = require('amqplib');
+let amqp;
+try {
+    amqp = require('amqplib');
+} catch (e) {
+    // amqplib optional for unit tests; ETL startup will be skipped when absent
+    amqp = null;
+}
 const db = require('./db');
+
+// normalizeType(type)
+// Inline helper: canonicalize a type string for ETL processing.
+// Steps: handle null/undefined, Unicode-normalize, lowercase, then trim.
+function normalizeType(type) {
+    if (type === null || type === undefined) return '';
+    // NFC is a sensible default normalization form for most use-cases
+    return String(type).normalize('NFC').toLowerCase().trim();
+}
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://jokes_rabbitmq';
 const MODERATED_QUEUE = 'moderated';
@@ -8,6 +23,10 @@ const TYPE_UPDATE_EXCHANGE = 'type_update_exchange';
 
 async function startETL() {
     try {
+        if (!amqp) {
+            console.warn('amqplib not installed; startETL will be skipped during tests');
+            return;
+        }
         const connection = await amqp.connect(RABBITMQ_URL);
         const channel = await connection.createChannel();
 
@@ -27,7 +46,7 @@ async function startETL() {
                     console.log("ETL Received payload:", payload);
 
                     const { setup, punchline, type } = payload;
-                    const safeType = type.toLowerCase().trim();
+                    const safeType = normalizeType(type);
 
                     // Transform and Load into Database
                     const isNewType = await db.insertJokeAndType(setup, punchline, safeType);
@@ -54,4 +73,10 @@ async function startETL() {
     }
 }
 
-startETL();
+// Export the helper for unit tests and the starter for direct execution
+module.exports = { normalizeType, startETL };
+
+// Only auto-start when run directly (require-safe for tests)
+if (require.main === module) {
+    startETL();
+}

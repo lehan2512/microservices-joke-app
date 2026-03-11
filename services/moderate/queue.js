@@ -1,4 +1,10 @@
-const amqp = require('amqplib');
+let amqp;
+try {
+    amqp = require('amqplib');
+} catch (e) {
+    // amqplib is optional for tests; queue functions will gracefully no-op when missing
+    amqp = null;
+}
 const fs = require('fs');
 const path = require('path');
 
@@ -22,6 +28,10 @@ if (!fs.existsSync(CACHE_FILE)) {
 
 async function connectQueue() {
     try {
+        if (!amqp) {
+            console.warn('amqplib not installed; connectQueue will be skipped');
+            return;
+        }
         const connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
         
