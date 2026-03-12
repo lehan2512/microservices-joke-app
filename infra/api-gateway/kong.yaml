@@ -11,7 +11,7 @@ services:
     plugins:
       - name: rate-limiting
         config:
-          minute: 5  # Keep demo-friendly low limit for now; increase if needed
+          minute: 8  # Keep demo-friendly low limit for now; increase if needed
           policy: local
           hide_client_headers: false  # ensure Kong forwards X-RateLimit-* and Retry-After headers to clients
 

@@ -26,11 +26,18 @@
             color: var(--text-main);
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 0;
         }
+
+        .layout { display:flex; min-height:100vh }
+        .sidebar {
+            width:220px; background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover)); color:white; padding:28px 18px; box-sizing:border-box; display:flex; flex-direction:column; gap:18px;
+        }
+        .nav-brand { font-weight:800; font-size:18px }
+        .nav-links { display:flex; flex-direction:column; gap:6px; margin-top:12px }
+        .nav-links a { color: rgba(255,255,255,0.9); text-decoration:none; padding:10px 12px; border-radius:8px; font-weight:600 }
+        .nav-links a.active, .nav-links a:hover { background: rgba(255,255,255,0.08) }
+        .main { flex:1; display:flex; justify-content:center; align-items:center; padding:20px }
 
         .container {
             background-color: var(--surface);
@@ -199,7 +206,18 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="layout">
+        <nav class="sidebar" aria-label="Main navigation">
+            <div class="nav-brand">Joke App</div>
+            <div class="nav-links">
+                <a href="/joke-api" id="nav-joke">Jokes</a>
+                <a href="/submit-api" id="nav-submit">Submit</a>
+                <a href="/moderate-api" id="nav-moderate">Moderate</a>
+            </div>
+        </nav>
+
+        <main class="main">
+            <div class="container">
         <div class="header">
             <h2>Joke Moderator</h2>
         </div>
@@ -236,11 +254,20 @@
                 <button id="rejectBtn" class="btn btn-reject" onclick="rejectJoke()">Reject</button>
             </div>
         </div>
+            </div>
+        </main>
     </div>
 
     <div id="toast"></div>
 
     <script>
+        (function markActive(){
+            try{
+                const path = window.location.pathname;
+                const map = [{id:'nav-joke', match:'/joke-api'},{id:'nav-submit', match:'/submit-api'},{id:'nav-moderate', match:'/moderate-api'}];
+                map.forEach(m=>{ const el=document.getElementById(m.id); if(!el) return; if(path.startsWith(m.match)) el.classList.add('active'); });
+            }catch(e){}
+        })();
         let pollingInterval;
 
         async function loadTypes() {
