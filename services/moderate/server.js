@@ -1,13 +1,24 @@
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
+const { auth, requiresAuth } = require('express-openid-connect');
 const { connectQueue, getJokeFromQueue, publishModeratedJoke, CACHE_FILE } = require('./queue');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-app.use(express.json());
+const config = {
+  authRequired: true,
+  auth0Logout: true,
+  secret: 'a-long-randomly-generated-string-for-session-encryption-12345',
+  baseURL: 'http://localhost:8000/moderate-api',
+  clientID: 'w7DnLzgXwsOG8XgORbCVHH3LhGIMMsc6',
+  issuerBaseURL: 'https://dev-kxm5q64g5rqu48xu.us.auth0.com'
+};
+
+app.use(auth(config));
 app.use(express.static('public'));
+app.use(express.json());
 
 connectQueue();
 

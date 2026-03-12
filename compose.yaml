@@ -37,7 +37,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DB_TYPE=${DB_TYPE:-MYSQL}
+      - DB_TYPE=${DB_TYPE:-MONGO}
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
 
@@ -45,7 +45,7 @@ services:
     build: ./services/joke-etl
     container_name: joke_etl
     environment:
-      - DB_TYPE=${DB_TYPE:-MYSQL}
+      - DB_TYPE=${DB_TYPE:-MONGO}
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
       - RABBITMQ_URL=amqp://jokes_rabbitmq
@@ -77,14 +77,15 @@ services:
       - rabbitmq
 
   kong:
-    image: kong:latest
+    build: ./infra/api-gateway 
     container_name: kong_gateway
     environment:
-      KONG_DATABASE: "off" # Runs Kong in DB-less mode
+      KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yaml
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_PLUGINS: bundled,oidc  
     ports:
       - "8000:8000"
     volumes:
