@@ -45,18 +45,8 @@ async function startETL() {
                     const payload = JSON.parse(msg.content.toString());
                     console.log("ETL Received payload:", payload);
 
-                    const { setup, punchline, type } = payload;
-                    const safeType = normalizeType(type);
-
-                    // Transform and Load into Database
-                    const isNewType = await db.insertJokeAndType(setup, punchline, safeType);
-
-                    // If a new type was written, publish an event to the fanout exchange
-                    if (isNewType) {
-                        const eventPayload = JSON.stringify({ type: safeType });
-                        channel.publish(TYPE_UPDATE_EXCHANGE, '', Buffer.from(eventPayload));
-                        console.log(`Published thick event for new type: ${safeType}`);
-                    }
+                    // Use the shared processing function so tests can call it directly
+                    await processPayload(payload, { dbModule: db, channel });
 
                     // Acknowledge receipt so broker deletes the message
                     channel.ack(msg);
@@ -73,8 +63,30 @@ async function startETL() {
     }
 }
 
+// processPayload(payload, { dbModule, channel })
+// - payload: { setup, punchline, type }
+// - dbModule (optional): override for the DB module (used in tests)
+// - channel (optional): if provided, will be used to publish type update events
+async function processPayload(payload, { dbModule = db, channel = null } = {}) {
+    const { setup, punchline, type } = payload || {};
+    const safeType = normalizeType(type);
+
+    // Transform and Load into Database
+    const isNewType = await dbModule.insertJokeAndType(setup, punchline, safeType);
+
+    // If a new type was written, publish an event to the fanout exchange (if channel available)
+    if (isNewType && channel && typeof channel.publish === 'function') {
+        const eventPayload = JSON.stringify({ type: safeType });
+        channel.publish(TYPE_UPDATE_EXCHANGE, '', Buffer.from(eventPayload));
+        console.log(`Published event for new type: ${safeType}`);
+    }
+
+    return { isNewType, safeType };
+}
+
 // Export the helper for unit tests and the starter for direct execution
-module.exports = { normalizeType, startETL };
+// Export the helper for unit tests and the starter for direct execution
+module.exports = { normalizeType, startETL, processPayload };
 
 // Only auto-start when run directly (require-safe for tests)
 if (require.main === module) {
