@@ -26,6 +26,54 @@
             color: var(--text-main);
             margin: 0;
             min-height: 100vh;
+            padding: 0;
+        }
+
+        /* Layout: side navigation + main content */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(180deg, var(--primary-purple), var(--accent-purple));
+            color: white;
+            padding: 28px 18px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.4px;
+            margin-bottom: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .nav-links a.active, .nav-links a:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .main {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -38,7 +86,7 @@
             border-radius: 16px;
             box-shadow: 0 12px 42px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             text-align: center;
         }
 
@@ -47,17 +95,17 @@
         }
 
         h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
             color: var(--primary-purple);
             margin: 0 0 8px 0;
-            letter-spacing: -0.8px;
+            letter-spacing: -0.5px;
         }
 
         .controls-row {
             display: flex;
             gap: 12px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             text-align: left;
             align-items: flex-end;
         }
@@ -76,9 +124,9 @@
             margin-bottom: 8px;
         }
 
-        select {
+        select, input[type="number"] {
             width: 100%;
-            padding: 14px 16px;
+            padding: 12px 16px;
             font-size: 15px;
             font-family: 'Inter', sans-serif;
             border: 2px solid var(--border);
@@ -87,6 +135,10 @@
             background-color: #FAFBFC;
             cursor: pointer;
             transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        select {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B778C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
@@ -94,7 +146,7 @@
             background-size: 16px;
         }
 
-        select:focus {
+        select:focus, input[type="number"]:focus {
             outline: none;
             border-color: var(--primary-purple);
             background-color: var(--surface);
@@ -131,32 +183,63 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             min-height: 240px;
+            display: block;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            gap: 16px;
             position: relative;
             overflow: hidden;
         }
 
-        #setup {
-            font-size: 24px; /* Maintaining the bigger font size */
-            font-weight: 600;
-            line-height: 1.4;
+        .joke-card {
+            padding: 18px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 6px 18px rgba(9,30,66,0.06);
+        }
+
+        .joke-setup {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.2;
             color: var(--text-main);
             margin-bottom: 24px;
             opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
 
-        #punchline {
-            font-size: 32px; /* Maintaining the large headline size */
+        .joke-punchline {
+            font-size: 28px;
             font-weight: 800;
             line-height: 1.2;
             color: var(--success);
             opacity: 0;
-            transform: scale(0.9) translateY(10px);
+            transform: translateY(10px) scale(0.95);
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            background-color: var(--primary-purple);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: none;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            background-color: #E2E2E2;
+            color: #A0A0A0;
+            cursor: not-allowed;
         }
 
         .fade-in { opacity: 1 !important; }
@@ -181,7 +264,18 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="layout">
+        <nav class="sidebar" aria-label="Main navigation">
+            <div class="nav-brand">IFS Joke App</div>
+            <div class="nav-links">
+                <a href="/joke-api" id="nav-joke">Jokes</a>
+                <a href="/submit-api" id="nav-submit">Submit</a>
+                <a href="/moderate-api" id="nav-moderate">Moderate</a>
+            </div>
+        </nav>
+
+        <main class="main">
+            <div class="container">
         <div class="header">
             <h1>Want to hear a joke?</h1>
         </div>
@@ -193,6 +287,10 @@
                     <option value="any">Any Joke Type</option>
                 </select>
             </div>
+            <div class="form-group" style="max-width:120px;">
+                <label for="countInput">Count</label>
+                <input type="number" id="countInput" min="1" max="20" value="1" />
+            </div>
             
             <button id="fetchBtn" onclick="fetchJoke()">
                 <span id="btnText">Fetch Joke</span>
@@ -201,12 +299,77 @@
         </div>
 
         <div class="joke-stage">
-            <div id="setup"></div>
-            <div id="punchline"></div>
+            <div id="jokeList"></div>
+            <div style="display:flex;gap:16px;align-items:center;margin-top:24px;justify-content:center">
+                <button id="prevBtn" class="nav-btn">Previous</button>
+                <div id="jokeCounter" style="color:var(--text-muted);font-weight:600;min-width:60px;text-align:center"></div>
+                <button id="nextBtn" class="nav-btn">Next</button>
+            </div>
         </div>
+            </div>
+        </main>
     </div>
 
     <script>
+        // mark active nav link based on path
+        (function markActive(){
+            try{
+                const path = window.location.pathname;
+                const map = [{id:'nav-joke', match:'/joke-api'},{id:'nav-submit', match:'/submit-api'},{id:'nav-moderate', match:'/moderate-api'}];
+                map.forEach(m=>{ const el=document.getElementById(m.id); if(!el) return; if(path.startsWith(m.match) || (path==='/' && m.match==='/joke-api')) el.classList.add('active'); });
+            }catch(e){}
+        })();
+        let currentJokes = [];
+        let currentIndex = 0;
+
+        function renderCurrentJoke() {
+            const jokeList = document.getElementById('jokeList');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const counter = document.getElementById('jokeCounter');
+            jokeList.innerHTML = '';
+            if (!Array.isArray(currentJokes) || currentJokes.length === 0) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                counter.innerText = '';
+                return;
+            }
+            const j = currentJokes[currentIndex];
+            const card = document.createElement('div');
+            card.className = 'joke-card';
+            const su = document.createElement('div'); su.className = 'joke-setup'; su.innerText = j.setup;
+            const pu = document.createElement('div'); pu.className = 'joke-punchline'; pu.innerText = j.punchline;
+            card.appendChild(su); card.appendChild(pu);
+            jokeList.appendChild(card);
+            // reveal with small delays
+            setTimeout(() => { su.classList.add('fade-in'); }, 80);
+            setTimeout(() => { pu.classList.add('pop-in'); }, 3000);
+
+            if (currentJokes.length > 1) {
+                prevBtn.style.display = 'inline-block';
+                nextBtn.style.display = 'inline-block';
+                prevBtn.disabled = (currentIndex === 0);
+                nextBtn.disabled = (currentIndex === currentJokes.length - 1);
+                counter.innerText = `${currentIndex + 1} / ${currentJokes.length}`;
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                counter.innerText = '';
+            }
+        }
+
+        function nextJoke() {
+            if (!currentJokes || currentIndex >= currentJokes.length - 1) return;
+            currentIndex++;
+            renderCurrentJoke();
+        }
+
+        function prevJoke() {
+            if (!currentJokes || currentIndex <= 0) return;
+            currentIndex--;
+            renderCurrentJoke();
+        }
+
         async function loadTypes() {
             try {
                 const response = await fetch('/joke-api/types');
@@ -226,6 +389,9 @@
         }
 
         document.getElementById('typeSelect').addEventListener('focus', loadTypes);
+
+        document.getElementById('nextBtn').addEventListener('click', nextJoke);
+        document.getElementById('prevBtn').addEventListener('click', prevJoke);
 
         // Timestamp (ms) when current rate-limit window expires. 0 = not rate-limited
         let rateLimitExpires = 0;
@@ -261,97 +427,69 @@
 
         async function fetchJoke() {
             const type = document.getElementById('typeSelect').value;
-            const setupDiv = document.getElementById('setup');
-            const punchlineDiv = document.getElementById('punchline');
+            const count = Math.max(1, Math.min(20, parseInt(document.getElementById('countInput').value || '1')));
+            const jokeList = document.getElementById('jokeList');
             const btn = document.getElementById('fetchBtn');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
-            
-            // 1. Reset UI States immediately
-            setupDiv.classList.remove('fade-in');
-            punchlineDiv.classList.remove('pop-in');
-            
-            // 2. Clear previous joke text so it doesn't "peek" through
-            setupDiv.innerText = "";
-            punchlineDiv.innerText = "";
-            
+
+            // Reset UI
+            jokeList.innerHTML = '';
+
             // Loading UI
             btn.disabled = true;
             btnText.style.display = 'none';
             btnSpinner.style.display = 'inline-block';
 
-            (async () => {
-                try {
-                    const response = await fetch(`/joke-api/joke/${type}?count=1`);
+            try {
+                const response = await fetch(`/joke-api/joke/${type}?count=${count}`);
 
-                    if (response.status === 429) {
-                        // Try to read Retry-After or X-RateLimit-Reset header
-                        let retryAfter = null;
-                        const ra = response.headers.get('retry-after');
-                        if (ra) retryAfter = parseInt(ra, 10);
-                        const xr = response.headers.get('x-ratelimit-reset');
-                        if (!retryAfter && xr) {
-                            const v = Number(xr);
-                            if (!Number.isNaN(v)) {
-                                // if it's an epoch timestamp
-                                if (v > 1e9) retryAfter = Math.max(0, Math.floor(v - Date.now() / 1000));
-                                else retryAfter = Math.max(0, Math.floor(v));
-                            }
-                        }
-
-                        if (!retryAfter || Number.isNaN(retryAfter)) retryAfter = 60; // fallback
-
-                        // Disable UI until reset and show message
-                        setupDiv.innerText = `Rate limit exceeded.`;
-                        setupDiv.style.color = "#dc3545";
-                        setupDiv.classList.add('fade-in');
-                        punchlineDiv.innerText = "";
-                        disableUntil(retryAfter);
-                    } else {
-                        const jokes = await response.json();
-                        setupDiv.style.color = "var(--text-main)";
-                        
-                        if (jokes.length > 0) {
-                            const joke = jokes[0];
-                            
-                            // Show Setup
-                            setupDiv.innerText = joke.setup;
-                            setupDiv.classList.add('fade-in');
-                            
-                            // Set Punchline text but it stays invisible because .pop-in is gone
-                            punchlineDiv.innerText = joke.punchline;
-
-                            // Reveal Punchline after short delay
-                            setTimeout(() => {
-                                // Double check that we still have a punchline to show 
-                                // (prevents punchline appearing if user clicked again quickly)
-                                if (punchlineDiv.innerText !== "") {
-                                    punchlineDiv.classList.add('pop-in');
-                                }
-                            }, 3000);
-                            
-                        } else {
-                            setupDiv.innerText = "No jokes found here. Try another category?";
-                            setupDiv.classList.add('fade-in');
+                if (response.status === 429) {
+                    // rate limit handling
+                    let retryAfter = null;
+                    const ra = response.headers.get('retry-after');
+                    if (ra) retryAfter = parseInt(ra, 10);
+                    const xr = response.headers.get('x-ratelimit-reset');
+                    if (!retryAfter && xr) {
+                        const v = Number(xr);
+                        if (!Number.isNaN(v)) {
+                            if (v > 1e9) retryAfter = Math.max(0, Math.floor(v - Date.now() / 1000));
+                            else retryAfter = Math.max(0, Math.floor(v));
                         }
                     }
-                } catch (error) {
-                    setupDiv.innerText = "Connection error. Is the API running?";
-                    setupDiv.classList.add('fade-in');
-                } finally {
-                    // Always hide spinner when the fetch attempt ends
-                    btnSpinner.style.display = 'none';
+                    if (!retryAfter || Number.isNaN(retryAfter)) retryAfter = 60;
 
-                    // If we are currently rate-limited (expiry in future), leave the button disabled
-                    if (rateLimitExpires && Date.now() < rateLimitExpires) {
-                        btnText.style.display = 'inline';
-                        // disableUntil already set the disabled state and manages the countdown
+                    currentJokes = [];
+                    renderCurrentJoke();
+                    jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup" style="color:#dc3545;opacity:1">Rate limit exceeded. Try again later.</div></div>`;
+                    disableUntil(retryAfter);
+                } else {
+                    const jokes = await response.json();
+                    if (!Array.isArray(jokes) || jokes.length === 0) {
+                        jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">No jokes found here. Try another category?</div></div>`;
+                        currentJokes = [];
+                        renderCurrentJoke();
                     } else {
-                        btn.disabled = false;
-                        btnText.style.display = 'inline';
+                        // multiple jokes OR single joke: keep in memory and show one-at-a-time
+                        currentJokes = jokes;
+                        currentIndex = 0;
+                        renderCurrentJoke();
                     }
                 }
-            })();
+            } catch (error) {
+                jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">Connection error. Is the API running?</div></div>`;
+                currentJokes = [];
+                renderCurrentJoke();
+            } finally {
+                // Always hide spinner
+                btnSpinner.style.display = 'none';
+                if (rateLimitExpires && Date.now() < rateLimitExpires) {
+                    btnText.style.display = 'inline';
+                } else {
+                    btn.disabled = false;
+                    btnText.style.display = 'inline';
+                }
+            }
         }
 
         loadTypes();
