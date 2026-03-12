@@ -16,13 +16,12 @@ const config = {
   issuerBaseURL: 'https://dev-kxm5q64g5rqu48xu.us.auth0.com'
 };
 
+// Simplified: Auth middleware enabled by default
 app.use(auth(config));
 app.use(express.static('public'));
 app.use(express.json());
 
-connectQueue();
-
-// Endpoint: Get Types (Reads purely from local cache)
+// Endpoint: Get Types
 app.get('/types', (req, res) => {
     try {
         const types = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
@@ -39,7 +38,7 @@ app.get('/moderate', async (req, res) => {
         if (joke) {
             res.json(joke);
         } else {
-            res.status(204).send(); // 204 No Content if queue is empty
+            res.status(204).send();
         }
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch joke" });
@@ -49,11 +48,9 @@ app.get('/moderate', async (req, res) => {
 // Endpoint: Submit the moderated joke
 app.post('/moderated', async (req, res) => {
     const { setup, punchline, type } = req.body;
-    
     if (!setup || !punchline || !type) {
         return res.status(400).json({ error: "Missing required fields" });
     }
-
     try {
         await publishModeratedJoke({ setup, punchline, type });
         res.status(202).json({ message: "Joke approved and sent to ETL!" });
@@ -62,6 +59,11 @@ app.post('/moderated', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Moderate Microservice running on port ${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+    connectQueue();
+    app.listen(PORT, () => {
+        console.log(`Moderate Microservice running on port ${PORT}`);
+    });
+}
