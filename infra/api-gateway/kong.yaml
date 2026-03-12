@@ -11,8 +11,9 @@ services:
     plugins:
       - name: rate-limiting
         config:
-          minute: 5  # Set incredibly low (5 requests/min) so you can easily demonstrate it working
+          minute: 5  # Keep demo-friendly low limit for now; increase if needed
           policy: local
+          hide_client_headers: false  # ensure Kong forwards X-RateLimit-* and Retry-After headers to clients
 
   # 2. Submit Microservice
   - name: submit-service
@@ -23,7 +24,7 @@ services:
           - /submit-api
         strip_path: true
 
-  # 3. Moderate Microservice
+  # 3. Moderate Microservice (with OIDC plugin for Auth0 integration)
   - name: moderate-service
     url: http://moderate_app:3003
     routes:
