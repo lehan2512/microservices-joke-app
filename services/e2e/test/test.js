@@ -144,7 +144,6 @@ async function run() {
 
   // 1) Submit publishes a new joke
   console.log('A1: Submit -> Moderate (via queue) -> ETL processes and reports new type');
-  // (Do not call per-module connectQueue here; we use the shared testChannel via monkey-patch)
   // publish a joke
   await submit.publishJoke({ setup: 'Why?', punchline: 'Because.', type: 'newtype' }).catch(e=>{ throw e; });
 

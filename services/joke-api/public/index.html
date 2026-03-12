@@ -227,6 +227,38 @@
 
         document.getElementById('typeSelect').addEventListener('focus', loadTypes);
 
+        // Timestamp (ms) when current rate-limit window expires. 0 = not rate-limited
+        let rateLimitExpires = 0;
+
+        function disableUntil(seconds) {
+            const btn = document.getElementById('fetchBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            // compute expiry timestamp
+            rateLimitExpires = Date.now() + (seconds * 1000);
+
+            btn.disabled = true;
+            // hide spinner and ensure text is visible for countdown
+            btnSpinner.style.display = 'none';
+            btnText.style.display = 'inline';
+
+            let remaining = seconds;
+            const origText = btnText.textContent;
+            btnText.textContent = `try again in ${remaining}s`;
+
+            const timer = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    rateLimitExpires = 0;
+                    btn.disabled = false;
+                    btnText.textContent = origText;
+                } else {
+                    btnText.textContent = `try again in ${remaining}s`;
+                }
+            }, 1000);
+        }
+
         async function fetchJoke() {
             const type = document.getElementById('typeSelect').value;
             const setupDiv = document.getElementById('setup');
@@ -248,16 +280,33 @@
             btnText.style.display = 'none';
             btnSpinner.style.display = 'inline-block';
 
-            setTimeout(async () => {
+            (async () => {
                 try {
                     const response = await fetch(`/joke-api/joke/${type}?count=1`);
-                    
+
                     if (response.status === 429) {
-                        setupDiv.innerText = "Rate limit exceeded. Try again later.";
+                        // Try to read Retry-After or X-RateLimit-Reset header
+                        let retryAfter = null;
+                        const ra = response.headers.get('retry-after');
+                        if (ra) retryAfter = parseInt(ra, 10);
+                        const xr = response.headers.get('x-ratelimit-reset');
+                        if (!retryAfter && xr) {
+                            const v = Number(xr);
+                            if (!Number.isNaN(v)) {
+                                // if it's an epoch timestamp
+                                if (v > 1e9) retryAfter = Math.max(0, Math.floor(v - Date.now() / 1000));
+                                else retryAfter = Math.max(0, Math.floor(v));
+                            }
+                        }
+
+                        if (!retryAfter || Number.isNaN(retryAfter)) retryAfter = 60; // fallback
+
+                        // Disable UI until reset and show message
+                        setupDiv.innerText = `Rate limit exceeded.`;
                         setupDiv.style.color = "#dc3545";
                         setupDiv.classList.add('fade-in');
-                        // Ensure punchline remains empty on error
-                        punchlineDiv.innerText = ""; 
+                        punchlineDiv.innerText = "";
+                        disableUntil(retryAfter);
                     } else {
                         const jokes = await response.json();
                         setupDiv.style.color = "var(--text-main)";
@@ -272,7 +321,7 @@
                             // Set Punchline text but it stays invisible because .pop-in is gone
                             punchlineDiv.innerText = joke.punchline;
 
-                            // Reveal Punchline after delay
+                            // Reveal Punchline after short delay
                             setTimeout(() => {
                                 // Double check that we still have a punchline to show 
                                 // (prevents punchline appearing if user clicked again quickly)
@@ -290,11 +339,19 @@
                     setupDiv.innerText = "Connection error. Is the API running?";
                     setupDiv.classList.add('fade-in');
                 } finally {
-                    btn.disabled = false;
-                    btnText.style.display = 'inline';
+                    // Always hide spinner when the fetch attempt ends
                     btnSpinner.style.display = 'none';
+
+                    // If we are currently rate-limited (expiry in future), leave the button disabled
+                    if (rateLimitExpires && Date.now() < rateLimitExpires) {
+                        btnText.style.display = 'inline';
+                        // disableUntil already set the disabled state and manages the countdown
+                    } else {
+                        btn.disabled = false;
+                        btnText.style.display = 'inline';
+                    }
                 }
-            }, 300);
+            })();
         }
 
         loadTypes();
