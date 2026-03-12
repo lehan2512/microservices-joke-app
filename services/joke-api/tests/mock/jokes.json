@@ -1,0 +1,9 @@
+{
+  "types": ["dad", "sports", "love"],
+  "jokes": [
+    { "setup": "Why did the chicken cross the road?", "punchline": "To get to the other side.", "type": "dad" },
+    { "setup": "I told my wife she was drawing her eyebrows too high.", "punchline": "She looked surprised.", "type": "love" },
+    { "setup": "Why do football players do well in school?", "punchline": "Because they know how to use their heads.", "type": "sports" },
+    { "setup": "My boss told me to have a good day...", "punchline": "So I went home.", "type": "dad" }
+  ]
+}
