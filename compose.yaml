@@ -34,6 +34,7 @@ services:
   joke-api:
     build: ./services/joke-api
     container_name: joke_api
+    restart: always
     ports:
       - "3001:3001"
     environment:
@@ -44,6 +45,7 @@ services:
   joke-etl:
     build: ./services/joke-etl
     container_name: joke_etl
+    restart: always
     environment:
       - DB_TYPE=${DB_TYPE:-MONGO}
       - DB_HOST=jokes_mysql
