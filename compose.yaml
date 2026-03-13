@@ -38,7 +38,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DB_TYPE=${DB_TYPE:-MONGO}
+      - DB_TYPE=MYSQL
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
 
@@ -47,7 +47,7 @@ services:
     container_name: joke_etl
     restart: always
     environment:
-      - DB_TYPE=${DB_TYPE:-MONGO}
+      - DB_TYPE=MYSQL
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
       - RABBITMQ_URL=amqp://jokes_rabbitmq
