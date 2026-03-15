@@ -31,7 +31,7 @@ resource "null_resource" "deploy_gateway" {
       "sudo systemctl enable --now docker",
       "sudo usermod -aG docker azureuser",
       "sudo docker stop kong_gateway || true",
-      "sudo certbot certonly --standalone -d ${azurerm_public_ip.gateway_ip.fqdn} --cert-name gateway --non-interactive --agree-tos -m student@university.edu || true"
+      "sudo certbot certonly --standalone -d ${azurerm_public_ip.gateway_ip.fqdn} --non-interactive --agree-tos -m student@university.edu || true",
     ]
   }
 
