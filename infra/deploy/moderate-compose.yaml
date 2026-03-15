@@ -1,0 +1,16 @@
+services:
+  moderate-app:
+    image: ghcr.io/lehan2512/moderate-app:latest
+    restart: unless-stopped
+    ports: ["3003:3003"]
+    environment:
+      - RABBITMQ_URL=amqp://10.1.1.10
+    volumes:
+      - moderate_cache:/usr/src/app/cache
+    networks:
+      - joke-network
+volumes:
+  moderate_cache:
+networks:
+  joke-network:
+    driver: bridge

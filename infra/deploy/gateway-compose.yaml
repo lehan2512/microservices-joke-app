@@ -1,0 +1,22 @@
+services:
+  kong:
+    image: kong:latest
+    container_name: kong_gateway
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yaml
+      KONG_PROXY_LISTEN: 0.0.0.0:80, 0.0.0.0:443 ssl
+      KONG_SSL_CERT: /certs/live/lehan-joke.eastasia.cloudapp.azure.com/fullchain.pem
+      KONG_SSL_CERT_KEY: /certs/live/lehan-joke.eastasia.cloudapp.azure.com/privkey.pem
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./kong.yaml:/kong/declarative/kong.yaml
+      - /etc/letsencrypt:/certs:ro
+    networks:
+      - joke-network
+networks:
+  joke-network:
+    driver: bridge
