@@ -3,8 +3,7 @@ const mysql = require('mysql2/promise');
 const { MongoClient } = require('mongodb');
 
 /**
- * Robust MySQL Provider for ETL.
- * Uses aggressive eviction and keep-alive to handle IP changes in Docker.
+ * Robust MySQL Provider with IP logging and Pool Refresh.
  */
 class MySQLProvider {
     constructor() {
@@ -15,48 +14,46 @@ class MySQLProvider {
             database: process.env.DB_NAME || 'jokes_db',
             waitForConnections: true,
             connectionLimit: 10,
-            connectTimeout: 10000,     // Wait 10s for initial connection
-            idleTimeout: 1000,         // Evict idle connections after 1s to force fresh DNS lookup
-            maxIdle: 0,                // Don't keep any idle connections in the pool
-            enableKeepAlive: true      // Periodically probe connections
+            connectTimeout: 5000
         };
         this.pool = mysql.createPool(this.config);
+        console.log(`[DB] Initialized pool for host: ${this.config.host}`);
     }
 
-    /**
-     * Recovery Helper: Forcibly recreate the pool if a fatal connection error occurs.
-     */
-    async handleConnectionError(err) {
-        if (err.code === 'ECONNREFUSED' || err.fatal || err.code === 'PROTOCOL_CONNECTION_LOST') {
-            console.warn(`[ETL DB] Fatal error (${err.code}). Resetting pool for host: ${this.config.host}`);
-            try { await this.pool.end(); } catch (e) {}
-            this.pool = mysql.createPool(this.config);
-        }
+    async refreshPool() {
+        console.warn(`[DB] Connection lost. Purging stale pool and re-resolving ${this.config.host}...`);
+        try {
+            await this.pool.end();
+        } catch (e) {}
+        this.pool = mysql.createPool(this.config);
     }
 
     async insertJokeAndType(setup, punchline, typeName) {
         let connection;
         try {
             connection = await this.pool.getConnection();
-            await connection.beginTransaction();
+            
+            // Safely log connection address if available
+            const addr = (connection.connection && connection.connection._address) 
+                ? connection.connection._address.address 
+                : 'unknown';
+            console.log(`[DB] Using connection to ${this.config.host} at IP: ${addr}`);
 
-            // Atomic Insert/Get for Type
+            await connection.beginTransaction();
             await connection.execute('INSERT IGNORE INTO types (name) VALUES (?)', [typeName]);
             const [typeRows] = await connection.execute('SELECT id FROM types WHERE name = ?', [typeName]);
-            if (typeRows.length === 0) throw new Error("Could not resolve type ID");
             const typeId = typeRows[0].id;
-            
-            // Insert Joke
-            await connection.execute(
-                'INSERT INTO jokes (type_id, setup, punchline) VALUES (?, ?, ?)', 
-                [typeId, setup, punchline]
-            );
-
+            await connection.execute('INSERT INTO jokes (type_id, setup, punchline) VALUES (?, ?, ?)', [typeId, setup, punchline]);
             await connection.commit();
             return true;
         } catch (err) {
+            console.error(`[DB] FAILURE: ${err.message} (Code: ${err.code})`);
             if (connection) await connection.rollback();
-            await this.handleConnectionError(err);
+
+            // Refresh the pool immediately on connection issues
+            if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT' || err.fatal) {
+                await this.refreshPool();
+            }
             throw err;
         } finally {
             if (connection) connection.release();
@@ -80,14 +77,16 @@ class MongoProvider {
 
     async insertJokeAndType(setup, punchline, typeName) {
         await this.ensureConnected();
+        let isNewType = false;
         const typesCol = this.db.collection('types');
         const jokesCol = this.db.collection('jokes');
         const existingType = await typesCol.findOne({ name: typeName });
         if (!existingType) {
             await typesCol.insertOne({ name: typeName });
+            isNewType = true;
         }
         await jokesCol.insertOne({ type: typeName, setup, punchline });
-        return true;
+        return isNewType;
     }
 }
 
