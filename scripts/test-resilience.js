@@ -13,6 +13,8 @@ const path = require('path');
 // Configuration
 const JOKE_API_URL = 'http://localhost:3001/joke/any?count=100';
 const SUBMIT_API_URL = 'http://localhost:3002/submit';
+const MODERATE_API_URL = 'http://localhost:3003/moderate';
+const MODERATED_SUBMIT_URL = 'http://localhost:3003/moderated';
 const DB_SERVICE = 'mysql';
 const RABBITMQ_SERVICE = 'rabbitmq';
 
@@ -59,7 +61,7 @@ async function getRequest(url) {
                     const parsed = JSON.parse(body);
                     resolve({ status: res.statusCode, body: parsed });
                 } catch (e) { 
-                    resolve({ status: res.statusCode, body: null }); 
+                    resolve({ status: res.statusCode, body: body }); 
                 }
             });
         });
@@ -107,37 +109,50 @@ async function runResilienceSuite() {
      * Test Case: Environment Initialization
      * Description: Ensure all containers are built and running in a clean state.
      */
-    console.log("\n[1/6] Initializing Environment...");
+    console.log("\n[1/8] Initializing Environment...");
     runCommand('docker-compose', ['--profile', 'mysql', 'up', '-d', '--force-recreate']);
     await wait(20000);
 
     /**
-     * Test Case: RabbitMQ Outage (Submit Microservice)
-     * Description: Verify that the Submit API fails gracefully when RabbitMQ is down,
-     *              while keeping the Type Retrieval (cached) functional.
+     * Test Case: RabbitMQ Outage Isolation
+     * Description: Verify that services remain partially functional (cached data) 
+     *              while RabbitMQ is unavailable.
      */
-    console.log("\n[2/6] Verification: Submit Service vs RabbitMQ Outage...");
+    console.log("\n[2/8] Verification: Service Isolation During RabbitMQ Outage...");
     runCommand('docker-compose', ['stop', RABBITMQ_SERVICE]);
     await wait(5000);
 
-    const submitRes = await postRequest(SUBMIT_API_URL, { setup: "RMQ Test", punchline: "Fail", type: "tech" });
-    const typesRes = await getRequest('http://localhost:3002/types');
+    const submitResDown = await postRequest(SUBMIT_API_URL, { setup: "Fail", punchline: "Fail", type: "tech" });
+    const typesResDown = await getRequest('http://localhost:3002/types');
 
-    if (submitRes.status === 500 && typesRes.status === 200) {
-        console.log("SUCCESS: Submit service isolated RabbitMQ failure correctly.");
+    if (submitResDown.status === 500 && typesResDown.status === 200) {
+        console.log("SUCCESS: Services correctly isolated RabbitMQ failure.");
     } else {
-        console.error(`FAILURE: Submit returned ${submitRes.status}, Types returned ${typesRes.status}`);
+        console.error(`FAILURE: Submit returned ${submitResDown.status}, Types returned ${typesResDown.status}`);
     }
 
-    console.log("Restoring RabbitMQ...");
+    /**
+     * Test Case: RabbitMQ Recovery
+     * Description: Verify that services automatically reconnect and resume normal 
+     *              operations once RabbitMQ returns.
+     */
+    console.log("\n[3/8] Verification: Service Recovery After RabbitMQ Restored...");
     runCommand('docker-compose', ['start', RABBITMQ_SERVICE]);
-    await wait(15000); // Wait for reconnection
+    console.log("Waiting for services to reconnect (15s)...");
+    await wait(15000);
+
+    const submitResUp = await postRequest(SUBMIT_API_URL, { setup: "Recovery Test", punchline: "Success", type: "dad" });
+    if (submitResUp.status === 202) {
+        console.log("SUCCESS: Submit service automatically recovered and resumed publishing.");
+    } else {
+        console.error(`FAILURE: Submit service failed to recover. Status: ${submitResUp.status}`);
+    }
 
     /**
      * Test Case: API Graceful Failure (Database Outage)
      * Description: Verify that the Joke API returns 500 when the database is unreachable.
      */
-    console.log("\n[3/6] Verification: Joke API Behavior During DB Outage...");
+    console.log("\n[4/8] Verification: Joke API Behavior During DB Outage...");
     runCommand('docker-compose', ['stop', DB_SERVICE]);
     
     const apiDownResponse = await getRequest(JOKE_API_URL);
@@ -151,7 +166,7 @@ async function runResilienceSuite() {
      * Test Case: Queue Persistence (RabbitMQ)
      * Description: Verify that jokes published during an outage are safely held in the queue.
      */
-    console.log("\n[4/6] Verification: Queue Safety During DB Outage...");
+    console.log("\n[5/8] Verification: Queue Safety During DB Outage...");
     const timestamp = Date.now();
     const setup = "Resilience Joke " + timestamp;
     const publishScript = path.join(__dirname, 'publish-moderated.js');
@@ -174,7 +189,7 @@ async function runResilienceSuite() {
      * Test Case: Automatic Recovery (Self-Healing)
      * Description: Verify that API and ETL services recover automatically when DB returns.
      */
-    console.log("\n[5/6] Verification: System Recovery & Self-Healing...");
+    console.log("\n[6/8] Verification: System Recovery & Self-Healing...");
     runCommand('docker-compose', ['start', DB_SERVICE]);
     console.log("Waiting for components to recover (45s)...");
     await wait(45000);
@@ -193,7 +208,7 @@ async function runResilienceSuite() {
      * Test Case: Container Persistence (Docker Volumes)
      * Description: Verify that joke data survives a full database container restart.
      */
-    console.log("\n[6/6] Verification: Data Persistence (Volumes)...");
+    console.log("\n[7/8] Verification: Data Persistence (Volumes)...");
     runCommand('docker-compose', ['restart', DB_SERVICE]);
     await wait(15000);
 
