@@ -16,14 +16,15 @@ jobs:
     strategy:
       matrix:
         include:
+          # FIXED: Updated context paths to match your repository structure
           - image_name: joke-api
-            context: ./joke-api
+            context: ./services/joke-api
           - image_name: joke-etl
-            context: ./joke-etl
+            context: ./services/joke-etl
           - image_name: submit-app
-            context: ./submit-app
+            context: ./services/submit
           - image_name: moderate-app
-            context: ./moderate-app
+            context: ./services/moderate
     
     permissions:
       contents: read
@@ -58,6 +59,25 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # JOKE VM DEPLOYMENT
+      # ==========================================
+      - name: Copy Compose File to Joke VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.JOKE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/deploy/joke-compose.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2 # Strips infra/deploy/ so the file lands directly in the home folder
+
       - name: Deploy to Joke VM
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -68,10 +88,28 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd /home/azureuser
+            mv /home/azureuser/joke-compose.yaml /home/azureuser/docker-compose.yaml
+            echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
-            sudo docker compose up -d
+            # Target Grade Option: Dynamically inject DB variable and profile
+            sudo DB_TYPE=MONGO docker compose --profile mongo up -d
       
+      # ==========================================
+      # SUBMIT VM DEPLOYMENT
+      # ==========================================
+      - name: Copy Compose File to Submit VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SUBMIT_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/deploy/submit-compose.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2
+
       - name: Deploy to Submit VM
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -82,9 +120,26 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd /home/azureuser
+            mv /home/azureuser/submit-compose.yaml /home/azureuser/docker-compose.yaml
+            echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
             sudo docker compose up -d
+
+      # ==========================================
+      # MODERATE VM DEPLOYMENT
+      # ==========================================
+      - name: Copy Compose File to Moderate VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MODERATE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/deploy/moderate-compose.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2
 
       - name: Deploy to Moderate VM
         uses: appleboy/ssh-action@v1.0.3
@@ -96,6 +151,7 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd /home/azureuser
+            mv /home/azureuser/moderate-compose.yaml /home/azureuser/docker-compose.yaml
+            echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
             sudo docker compose up -d
