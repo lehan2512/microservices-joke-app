@@ -1,0 +1,101 @@
+name: Build, Push, and Deploy Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image_name: joke-api
+            context: ./joke-api
+          - image_name: joke-etl
+            context: ./joke-etl
+          - image_name: submit-app
+            context: ./submit-app
+          - image_name: moderate-app
+            context: ./moderate-app
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.image_name }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.image_name }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Joke VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.JOKE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /home/azureuser
+            sudo docker compose pull
+            sudo docker compose up -d
+      
+      - name: Deploy to Submit VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SUBMIT_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /home/azureuser
+            sudo docker compose pull
+            sudo docker compose up -d
+
+      - name: Deploy to Moderate VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MODERATE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /home/azureuser
+            sudo docker compose pull
+            sudo docker compose up -d

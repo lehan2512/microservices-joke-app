@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: jokes_db
+    ports: ["3306:3306"]
+    networks:
+      - joke-network
+    profiles: ["db"]
+
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    networks:
+      - joke-network
+    profiles: ["db"]
+
+  joke-api:
+    image: ghcr.io/lehan2512/joke-api:latest
+    restart: unless-stopped
+    ports: ["3001:3001"]
+    environment:
+      - DB_TYPE=MONGO
+      - DB_HOST=mysql
+      - MONGO_URI=mongodb://mongo:27017
+    volumes:
+      - joke_api_data:/usr/src/app/data
+    networks:
+      - joke-network
+    profiles: ["api"]
+
+  joke-etl:
+    image: ghcr.io/lehan2512/joke-etl:latest
+    restart: unless-stopped
+    environment:
+      - DB_TYPE=MONGO
+      - DB_HOST=mysql
+      - MONGO_URI=mongodb://mongo:27017
+      - RABBITMQ_URL=amqp://10.1.1.10
+    networks:
+      - joke-network
+    profiles: ["etl"]
+
+networks:
+  joke-network:
+    driver: bridge
+
+volumes:
+  joke_api_data:
