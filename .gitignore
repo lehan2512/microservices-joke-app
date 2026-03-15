@@ -1,2 +1,25 @@
 ﻿node_modules/
 scripts/rename-services.ps1
+
+# Local .terraform directories and caches
+**/.terraform/*
+
+# Terraform State files (CRITICAL: These contain unencrypted secrets and infrastructure data)
+*.tfstate
+*.tfstate.*
+
+# Private SSH Keys (CRITICAL: Do not push your joke_app_ssh_key.pem)
+*.pem
+*.rsa
+*.key
+
+# Variables files (If you ever use a terraform.tfvars file to store passwords)
+*.tfvars
+*.tfvars.json
+
+# Terraform plan output files
+*.tfplan
+
+# Crash logs
+crash.log
+crash.*.log
