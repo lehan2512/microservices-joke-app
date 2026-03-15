@@ -20,7 +20,7 @@ services:
       - "27017:27017"
     volumes:
       - ./infra/db-init/init.js:/docker-entrypoint-initdb.d/init.js
-      - mongo_data:/data/dbn
+      - mongo_data:/data/db
     profiles:
       - mongo
 
@@ -79,7 +79,7 @@ services:
       - rabbitmq
 
   kong:
-    build: ./infra/api-gateway 
+    image: kong:latest 
     container_name: kong_gateway
     environment:
       KONG_DATABASE: "off"
@@ -87,7 +87,6 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_PROXY_LISTEN: 0.0.0.0:8000
-      KONG_PLUGINS: bundled,oidc  
     ports:
       - "8000:8000"
     volumes:
