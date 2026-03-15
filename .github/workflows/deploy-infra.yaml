@@ -1,0 +1,82 @@
+name: Deploy Infrastructure (Gateway & Broker)
+
+on:
+  push:
+    paths:
+      # This ensures this workflow ONLY runs if you modify infrastructure files
+      - 'infra/api-gateway/**'
+      - 'infra/deploy/gateway-compose.yaml'
+      - 'infra/deploy/broker-compose.yaml'
+  workflow_dispatch:
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # GATEWAY VM DEPLOYMENT (Direct Connection)
+      # ==========================================
+      - name: Copy Compose File to Gateway VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GATEWAY_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/deploy/gateway-compose.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2
+
+      - name: Copy Kong Config to Gateway VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GATEWAY_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/api-gateway/kong.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2
+
+      - name: Deploy to Gateway VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GATEWAY_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            mv /home/azureuser/gateway-compose.yaml /home/azureuser/docker-compose.yaml
+            # Kong relies on kong.yaml being in the same directory, which the SCP steps just handled!
+            sudo docker compose pull
+            sudo docker compose up -d
+
+      # ==========================================
+      # BROKER VM DEPLOYMENT (Via Proxy)
+      # ==========================================
+      - name: Copy Compose File to Broker VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.BROKER_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/deploy/broker-compose.yaml"
+          target: "/home/azureuser/"
+          strip_components: 2
+
+      - name: Deploy to Broker VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.BROKER_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            mv /home/azureuser/broker-compose.yaml /home/azureuser/docker-compose.yaml
+            sudo docker compose pull
+            sudo docker compose up -d
