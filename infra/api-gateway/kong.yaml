@@ -24,7 +24,7 @@ services:
           - /submit-api
         strip_path: true
 
-  # 3. Moderate Microservice (with OIDC plugin for Auth0 integration)
+  # 3. Moderate Microservice
   - name: moderate-service
     url: http://moderate_app:3003
     routes:

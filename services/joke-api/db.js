@@ -2,112 +2,151 @@ require('dotenv').config();
 const mysql = require('mysql2/promise');
 const { MongoClient } = require('mongodb');
 
-/**
- * Robust MySQL Provider for API.
- * Uses aggressive eviction to handle IP changes in Docker.
- */
-class MySQLProvider {
-    constructor() {
-        this.config = {
-            host: process.env.DB_HOST || 'jokes_mysql',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || 'password',
-            database: process.env.DB_NAME || 'jokes_db',
-            waitForConnections: true,
-            connectionLimit: 10,
-            connectTimeout: 5000,
-            idleTimeout: 1000,
-            maxIdle: 0,
-            enableKeepAlive: true
-        };
-        this.pool = mysql.createPool(this.config);
-    }
+const dbType = process.env.DB_TYPE || 'MYSQL';
 
-    async handleConnectionError(err) {
-        if (err.code === 'ECONNREFUSED' || err.fatal || err.code === 'PROTOCOL_CONNECTION_LOST') {
-            console.warn(`[API DB] Fatal error (${err.code}), resetting pool...`);
-            try { await this.pool.end(); } catch (e) {}
-            this.pool = mysql.createPool(this.config);
-        }
-    }
-
-    async resolveTypeName(requested) {
-        if (!requested) return null;
-        try {
-            const [rows] = await this.pool.query('SELECT id, name FROM types');
-            const lowered = requested.toLowerCase();
-            let match = rows.find(r => String(r.name).toLowerCase() === lowered);
-            return match || null;
-        } catch (err) {
-            await this.handleConnectionError(err);
-            throw err;
-        }
-    }
-
-    async getRandomJokes(type, count) {
-        try {
-            const n = Number(count);
-            let query = 'SELECT j.setup, j.punchline, t.name as type FROM jokes j JOIN types t ON j.type_id = t.id';
-            let params = [];
-            if (type.toLowerCase() !== 'any') {
-                const typeRow = await this.resolveTypeName(type);
-                if (!typeRow) return [];
-                query += ' WHERE t.id = ?';
-                params.push(typeRow.id);
-            }
-            query += ' ORDER BY RAND() LIMIT ?';
-            params.push(n);
-            const [rows] = await this.pool.query(query, params);
-            return rows;
-        } catch (err) {
-            await this.handleConnectionError(err);
-            throw err;
-        }
-    }
-
-    async getTypes() {
-        try {
-            const [rows] = await this.pool.execute('SELECT name FROM types');
-            return rows.map(r => r.name);
-        } catch (err) {
-            await this.handleConnectionError(err);
-            throw err;
-        }
-    }
+// MySQL Connection Pool (Best practice for performance)
+let mysqlPool;
+if (dbType === 'MYSQL') {
+    mysqlPool = mysql.createPool({
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || 'password',
+        database: process.env.DB_NAME || 'jokes_db',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
 }
 
-class MongoProvider {
-    constructor() {
-        const uri = process.env.MONGO_URI || 'mongodb://jokes_mongo:27017';
-        this.client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
-        this.db = null;
-        this.connectPromise = this.client.connect().then(() => {
-            this.db = this.client.db(process.env.DB_NAME || 'jokes_db');
-        }).catch(() => {});
-    }
+// MongoDB Connection
+let mongoClient;
+let mongoDb;
+if (dbType === 'MONGO') {
+    const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
+    mongoClient = new MongoClient(uri);
+    mongoClient.connect().then(() => {
+        mongoDb = mongoClient.db(process.env.DB_NAME || 'jokes_db');
+        console.log("Connected to MongoDB");
+    }).catch(console.error);
+}
 
-    async ensureConnected() {
-        if (!this.db) await this.connectPromise;
-    }
+async function getRandomJokes(type, count) {
+    if (dbType === 'MYSQL') {
+        // Helper: resolve requested type to actual type name using strict case-insensitive match
+        async function resolveTypeName(requested) {
+            if (!requested) return null;
+            const [rows] = await mysqlPool.query('SELECT id, name FROM types');
+            const lowered = requested.toLowerCase();
+            return rows.find(r => String(r.name).toLowerCase() === lowered) || null;
+        }
 
-    async getRandomJokes(type, count) {
-        await this.ensureConnected();
+        const n = Number(count);
+
+        if (n === 1) {
+            // Use COUNT + OFFSET sampling to pick one random row uniformly
+            if (type.toLowerCase() !== 'any') {
+                const typeRow = await resolveTypeName(type);
+                if (!typeRow) return [];
+                const typeId = typeRow.id;
+
+                const [[{ cnt }]] = await mysqlPool.query('SELECT COUNT(*) as cnt FROM jokes WHERE type_id = ?', [typeId]);
+                if (!cnt || cnt === 0) return [];
+
+                const offset = Math.floor(Math.random() * cnt);
+                const [rows] = await mysqlPool.query(
+                    'SELECT j.setup, j.punchline, t.name as type FROM jokes j JOIN types t ON j.type_id = t.id WHERE j.type_id = ? ORDER BY j.id LIMIT 1 OFFSET ?',
+                    [typeId, offset]
+                );
+                return rows;
+            } else {
+                const [[{ cnt }]] = await mysqlPool.query('SELECT COUNT(*) as cnt FROM jokes');
+                if (!cnt || cnt === 0) return [];
+
+                const offset = Math.floor(Math.random() * cnt);
+                const [rows] = await mysqlPool.query(
+                    'SELECT j.setup, j.punchline, t.name as type FROM jokes j JOIN types t ON j.type_id = t.id ORDER BY j.id LIMIT 1 OFFSET ?',
+                    [offset]
+                );
+                return rows;
+            }
+        }
+
+        // Fallback for multi-row sampling
+        let query = 'SELECT j.setup, j.punchline, t.name as type FROM jokes j JOIN types t ON j.type_id = t.id';
+        let params = [];
+        if (type.toLowerCase() !== 'any') {
+            const typeRow = await resolveTypeName(type);
+            if (!typeRow) return [];
+            query += ' WHERE t.name = ?';
+            params.push(typeRow.name);
+        }
+        query += ' ORDER BY RAND() LIMIT ?';
+        params.push(n);
+
+        const [rows] = await mysqlPool.query(query, params);
+        return rows;
+
+    } else {
+        // Ensure Mongo client is connected before running queries
+        if (!mongoDb) {
+            try {
+                if (!mongoClient) {
+                    const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
+                    mongoClient = new MongoClient(uri);
+                }
+                await mongoClient.connect();
+                mongoDb = mongoClient.db(process.env.DB_NAME || 'jokes_db');
+                console.log('MongoDB connection established (late-init)');
+            } catch (err) {
+                console.error('Failed to connect to MongoDB:', err);
+                throw err;
+            }
+        }
+
+        // Strict case-insensitive match for MongoDB
         let matchStage = {};
-        if (type.toLowerCase() !== 'any') matchStage = { type: type };
-        return await this.db.collection('jokes')
+        if (type.toLowerCase() !== 'any') {
+            const typesList = await mongoDb.collection('types').find({}).toArray();
+            const lowered = type.toLowerCase();
+            const matched = typesList.find(t => String(t.name).toLowerCase() === lowered);
+            
+            if (!matched) return [];
+            matchStage = { type: matched.name };
+        }
+        
+        // Use MongoDB aggregation for random selection
+        return await mongoDb.collection('jokes')
             .aggregate([
                 { $match: matchStage },
                 { $sample: { size: Number(count) } },
                 { $project: { _id: 0, setup: 1, punchline: 1, type: 1 } }
             ]).toArray();
     }
+}
 
-    async getTypes() {
-        await this.ensureConnected();
-        const types = await this.db.collection('types').find({}).toArray();
+async function getTypes() {
+    if (dbType === 'MYSQL') {
+        const [rows] = await mysqlPool.execute('SELECT name FROM types');
+        return rows.map(r => r.name);
+    } else {
+        if (!mongoDb) {
+            try {
+                if (!mongoClient) {
+                    const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
+                    mongoClient = new MongoClient(uri);
+                }
+                await mongoClient.connect();
+                mongoDb = mongoClient.db(process.env.DB_NAME || 'jokes_db');
+                console.log('MongoDB connection established (late-init)');
+            } catch (err) {
+                console.error('Failed to connect to MongoDB:', err);
+                throw err;
+            }
+        }
+
+        const types = await mongoDb.collection('types').find({}).toArray();
         return types.map(t => t.name);
     }
 }
 
-const dbType = process.env.DB_TYPE || 'MYSQL';
-module.exports = (dbType === 'MONGO') ? new MongoProvider() : new MySQLProvider();
+module.exports = { getRandomJokes, getTypes };
