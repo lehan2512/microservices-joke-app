@@ -463,10 +463,11 @@
                     body: JSON.stringify({ setup, punchline, type: finalType })
                 });
                 if (response.ok) {
-                    showToast("Joke Approved!");
+                    showToast("Joke approved");
+                    loadTypes();
                     startPolling();
                 } else {
-                    showToast("Approval failed", true);
+                    showToast("Joke rejected", true);
                 }
             } catch (e) {
                 showToast("Connection error", true);
