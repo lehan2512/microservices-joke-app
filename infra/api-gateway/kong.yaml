@@ -2,7 +2,7 @@ _format_version: "3.0"
 services:
   # 1. Joke API Service
   - name: joke-service
-    url: http://10.0.1.10:3001
+    url: http://10.0.1.11:3001
     routes:
       - name: joke-route
         paths:

@@ -50,3 +50,5 @@ networks:
 
 volumes:
   joke_api_data:
+  mysql_data:
+  mongo_data:

@@ -78,6 +78,19 @@ jobs:
           target: "/home/azureuser/"
           strip_components: 2 # Strips infra/deploy/ so the file lands directly in the home folder
 
+      - name: Copy SQL Init Script to Joke VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.JOKE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.VM_SSH_KEY }}
+          proxy_host: ${{ secrets.GATEWAY_IP }}
+          proxy_username: azureuser
+          proxy_key: ${{ secrets.VM_SSH_KEY }}
+          source: "infra/db-init/init.sql"
+          target: "/home/azureuser/infra/db-init/"
+          strip_components: 2
+          
       - name: Deploy to Joke VM
         uses: appleboy/ssh-action@v1.0.3
         with:
