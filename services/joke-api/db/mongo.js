@@ -8,37 +8,58 @@ const config = require('../config');
 
 class MongoRepository {
     constructor() {
-        this.client = new MongoClient(config.mongo.uri);
+        // if the database is offline. It fails fast (5s) to return a 503 to the user.
+        this.client = new MongoClient(config.mongo.uri, {
+            serverSelectionTimeoutMS: 5000 
+        });
         this.db = null;
+        this.connectionLock = null;
         
         // Eager connection attempt to prevent race conditions during boot
-        this.connectPromise = this.client.connect().then(() => {
-            this.db = this.client.db(config.mongo.dbName);
-            console.log("Connected to MongoDB successfully");
-        }).catch(err => {
-            console.error('Failed eager connection to MongoDB:', err.message);
+        this.ensureConnected().catch(err => {
+            console.warn('Eager MongoDB connection failed. Will retry on next request.');
         });
     }
 
     async ensureConnected() {
-        if (!this.db) {
-            try {
-                await this.connectPromise;
-            } catch (err) {
+        if (this.db) return;
+
+        if (this.connectionLock) {
+            await this.connectionLock;
+            return;
+        }
+
+        // 3. Initiate a new connection attempt and lock it
+        this.connectionLock = this.client.connect()
+            .then(() => {
+                this.db = this.client.db(config.mongo.dbName);
+                console.log("Connected to MongoDB successfully");
+            })
+            .catch(err => {
+                this.connectionLock = null;
                 throw new DatabaseError('MongoDB connection could not be established', err);
-            }
+            });
+
+        await this.connectionLock;
+    }
+
+    handleConnectionDrop(err) {
+        if (err.name === 'MongoNetworkError' || err.name === 'MongoServerSelectionError' || err.name === 'MongoTopologyClosedError') {
+            console.error("MongoDB network drop detected. Forcing reconnection on next request...");
+            this.db = null;
+            this.connectionLock = null;
         }
     }
 
     async getTypeByName(name) {
         await this.ensureConnected();
         try {
-            // Fixes N+1: Uses Regex for native case-insensitive DB match
             const type = await this.db.collection('types').findOne({ 
                 name: { $regex: new RegExp(`^${name}$`, 'i') } 
             });
             return type || null;
         } catch (err) {
+            this.handleConnectionDrop(err);
             throw new DatabaseError(`Failed to fetch Mongo type by name: ${name}`, err);
         }
     }
@@ -49,6 +70,7 @@ class MongoRepository {
             const query = typeRow ? { type: typeRow.name } : {};
             return await this.db.collection('jokes').countDocuments(query);
         } catch (err) {
+            this.handleConnectionDrop(err);
             throw new DatabaseError('Failed to get Mongo joke count', err);
         }
     }
@@ -65,6 +87,7 @@ class MongoRepository {
                 .toArray();
             return joke[0] || null;
         } catch (err) {
+            this.handleConnectionDrop(err);
             throw new DatabaseError(`Failed to fetch Mongo joke at offset ${offset}`, err);
         }
     }
@@ -75,6 +98,7 @@ class MongoRepository {
             const types = await this.db.collection('types').find({}).toArray();
             return types.map(t => t.name);
         } catch (err) {
+            this.handleConnectionDrop(err);
             throw new DatabaseError('Failed to fetch Mongo types list', err);
         }
     }

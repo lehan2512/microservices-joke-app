@@ -11,12 +11,12 @@
         :root {
             --primary-purple: #4B1A70;
             --primary-hover: #612B9F;
-            --accent-purple: #8A40C6;
             --background: #F4F5F7;
             --surface: #FFFFFF;
             --text-main: #172B4D;
             --text-muted: #6B778C;
             --success: #00875A;
+            --error: #DE350B;
             --border: #DFE1E6;
         }
 
@@ -29,47 +29,43 @@
             padding: 0;
         }
 
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        /* --- UNIFIED SIDEBAR CSS --- */
+        .layout { display: flex; min-height: 100vh; }
+        
         .sidebar {
             width: 220px;
-            background: linear-gradient(180deg, var(--primary-purple), var(--accent-purple));
+            background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover));
             color: white;
             padding: 28px 18px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 18px;
         }
-
         .nav-brand {
             font-weight: 800;
             font-size: 18px;
             letter-spacing: -0.4px;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
-
         .nav-links {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 12px;
         }
-
         .nav-links a {
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             padding: 10px 12px;
             border-radius: 8px;
             font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s ease;
         }
-
         .nav-links a.active, .nav-links a:hover {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
         }
+        /* -------------------------- */
 
         .main {
             flex: 1;
@@ -89,10 +85,7 @@
             text-align: center;
         }
 
-        .header {
-            margin-bottom: 32px;
-        }
-
+        .header { margin-bottom: 32px; }
         h1 {
             font-size: 28px;
             font-weight: 800;
@@ -108,11 +101,7 @@
             text-align: left;
             align-items: flex-end;
         }
-
-        .form-group {
-            flex: 1;
-        }
-
+        .form-group { flex: 1; }
         label {
             display: block;
             font-size: 11px;
@@ -153,16 +142,8 @@
             transition: all 0.2s ease;
             white-space: nowrap;
         }
-
-        #fetchBtn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        #fetchBtn:disabled {
-            background-color: var(--text-muted);
-            cursor: not-allowed;
-        }
+        #fetchBtn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        #fetchBtn:disabled { background-color: var(--text-muted); cursor: not-allowed; transform: none; }
 
         .joke-stage {
             margin-top: 20px;
@@ -185,7 +166,6 @@
             background: white;
             box-shadow: 0 6px 18px rgba(9,30,66,0.06);
         }
-
         .joke-setup {
             font-size: 32px;
             font-weight: 700;
@@ -195,7 +175,6 @@
             opacity: 0;
             transition: opacity 0.4s ease;
         }
-
         .joke-punchline {
             font-size: 28px;
             font-weight: 800;
@@ -207,10 +186,7 @@
         }
 
         .fade-in { opacity: 1 !important; }
-        .pop-in {
-            opacity: 1 !important;
-            transform: scale(1) translateY(0) !important;
-        }
+        .pop-in { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
 
         .spinner {
             width: 20px;
@@ -221,7 +197,6 @@
             animation: spin 1s linear infinite;
             display: none;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -247,7 +222,7 @@
                     <div class="form-group">
                         <label for="typeSelect">Joke Type</label>
                         <select id="typeSelect">
-                            <option value="any">Any Joke Type</option>
+                            <option value="any">Any Category</option>
                         </select>
                     </div>
                     
@@ -265,55 +240,29 @@
     </div>
 
     <script>
-        const getBaseUrl = () => {
-            const path = window.location.pathname;
-            return path.includes('/joke-api') ? '/joke-api' : ''; 
-        };
-        const baseUrl = getBaseUrl();
-        const isBehindKong = window.location.pathname.includes('/joke-api') || window.location.pathname.includes('/submit-api') || window.location.pathname.includes('/moderate-api');
+        const baseUrl = '/joke-api';
 
         (function setupNavigation(){
-            try {
-                const hostname = window.location.hostname;
-                const protocol = window.location.protocol;
-                
-                // Map the services to their Kong paths and their direct local ports
-                const map = [
-                    { id: 'nav-joke', match: '/joke-api', localPort: '3001' },
-                    { id: 'nav-submit', match: '/submit-api', localPort: '3002' },
-                    { id: 'nav-moderate', match: '/moderate-api', localPort: '3003' }
-                ];
+            const path = window.location.pathname;
+            const map = [
+                { id: 'nav-joke', match: '/joke-api' },
+                { id: 'nav-submit', match: '/submit-api' },
+                { id: 'nav-moderate', match: '/moderate-api' }
+            ];
 
-                map.forEach(m => { 
-                    const el = document.getElementById(m.id); 
-                    if (!el) return; 
-
-                    // 1. Set the correct href
-                    if (isBehindKong) {
-                        // Production / Kong mapping
-                        el.href = m.match;
-                    } else {
-                        // Local testing (bypassing Kong), point to the direct container ports
-                        el.href = `${protocol}//${hostname}:${m.localPort}/`;
-                    }
-
-                    // 2. Mark the current page as 'active' in the sidebar
-                    const path = window.location.pathname;
-                    const currentPort = window.location.port;
-                    
-                    if (path.startsWith(m.match) || (!isBehindKong && currentPort === m.localPort)) {
-                        el.classList.add('active'); 
-                    }
-                });
-            } catch(e) {
-                console.error("Navigation setup failed:", e);
-            }
+            map.forEach(m => { 
+                const el = document.getElementById(m.id); 
+                if (!el) return; 
+                el.href = m.match; 
+                if (path.startsWith(m.match)) {
+                    el.classList.add('active'); 
+                }
+            });
         })();
 
         function renderJoke(joke) {
             const container = document.getElementById('jokeContainer');
             container.innerHTML = '';
-            
             if (!joke) return;
 
             const card = document.createElement('div');
@@ -332,7 +281,7 @@
             container.appendChild(card);
 
             setTimeout(() => { su.classList.add('fade-in'); }, 80);
-            setTimeout(() => { pu.classList.add('pop-in'); }, 2000); // Reduced delay for single joke feel
+            setTimeout(() => { pu.classList.add('pop-in'); }, 2000);
         }
 
         async function loadTypes() {
@@ -360,10 +309,12 @@
             const btnText = document.getElementById('btnText');
             rateLimitExpires = Date.now() + (seconds * 1000);
             btn.disabled = true;
+            btnText.style.display = 'inline';
 
             let remaining = seconds;
             const origText = "Fetch Joke";
-            btnText.textContent = `try again in ${remaining}s`;
+            
+            btnText.textContent = `Retry in ${remaining}s`;
 
             const timer = setInterval(() => {
                 remaining -= 1;
@@ -373,7 +324,7 @@
                     btn.disabled = false;
                     btnText.textContent = origText;
                 } else {
-                    btnText.textContent = `try again in ${remaining}s`;
+                    btnText.textContent = `Retry in ${remaining}s`;
                 }
             }, 1000);
         }
@@ -391,12 +342,16 @@
             btnSpinner.style.display = 'inline-block';
 
             try {
-                // Hardcoded count=1 for single joke requirement
                 const response = await fetch(`${baseUrl}/joke/${type}?count=1`);
 
                 if (response.status === 429) {
                     let retryAfter = parseInt(response.headers.get('retry-after')) || 60;
-                    container.innerHTML = `<div class="joke-card"><div class="joke-setup" style="color:#dc3545;opacity:1">Rate limit exceeded.</div></div>`;
+                    container.innerHTML = `
+                        <div class="joke-card">
+                            <div class="joke-setup" style="color:#DE350B; opacity:1; font-size: 20px;">
+                               Rate limit exceeded.
+                            </div>
+                        </div>`;
                     disableUntil(retryAfter);
                 } else {
                     const jokes = await response.json();
@@ -409,10 +364,10 @@
             } catch (error) {
                 container.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">Connection error.</div></div>`;
             } finally {
-                btnSpinner.style.display = 'none';
-                if (!(rateLimitExpires && Date.now() < rateLimitExpires)) {
-                    btn.disabled = false;
+                if (Date.now() >= rateLimitExpires) {
+                    btnSpinner.style.display = 'none';
                     btnText.style.display = 'inline';
+                    btn.disabled = false;
                 }
             }
         }

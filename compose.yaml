@@ -38,7 +38,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DB_TYPE=MONGO
+      - DB_TYPE=MYSQL
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
 
@@ -73,6 +73,8 @@ services:
       - "3003:3003"
     environment:
       - RABBITMQ_URL=amqp://jokes_rabbitmq
+      - AUTH0_BASE_URL=http://localhost:8000/moderate-api
+      # In production, this would be AUTH0_BASE_URL=http://20.205.40.175/moderate-api
     volumes:
       - moderate_cache:/usr/src/app/cache
     depends_on:

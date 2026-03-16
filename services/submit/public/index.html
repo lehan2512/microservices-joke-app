@@ -204,67 +204,99 @@
     </div>
 
     <script>
-        (function markActive(){
-            try{
-                const path = window.location.pathname;
-                const map = [{id:'nav-joke', match:'/joke-api'},{id:'nav-submit', match:'/submit-api'},{id:'nav-moderate', match:'/moderate-api'}];
-                map.forEach(m=>{ const el=document.getElementById(m.id); if(!el) return; if(path.startsWith(m.match)) el.classList.add('active'); });
-            }catch(e){}
+        const baseUrl = '/submit-api';
+
+        // --- NAVIGATION ---
+        (function setupNavigation(){
+            const path = window.location.pathname;
+            const map = [
+                { id: 'nav-joke', match: '/joke-api' },
+                { id: 'nav-submit', match: '/submit-api' },
+                { id: 'nav-moderate', match: '/moderate-api' }
+            ];
+
+            map.forEach(m => { 
+                const el = document.getElementById(m.id); 
+                if (!el) return; 
+                el.href = m.match; 
+                if (path.startsWith(m.match)) {
+                    el.classList.add('active'); 
+                }
+            });
         })();
+
         async function loadTypes() {
             try {
-                const response = await fetch('/submit-api/types');
-                const types = await response.json();
                 const select = document.getElementById('typeSelect');
+                const currentValue = select.value; 
+
+                const response = await fetch(`${baseUrl}/types`);
+                const types = await response.json();
                 
-                select.innerHTML = '<option value="new_type_option">+ Create New Category</option>';
+                select.innerHTML = '<option value="" disabled>Select a category...</option>';
                 
                 types.forEach(type => {
                     const option = document.createElement('option');
                     option.value = type;
                     option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-                    select.insertBefore(option, select.firstChild);
+                    select.appendChild(option);
                 });
                 
-                select.selectedIndex = 0;
-                toggleNewTypeInput();
+                const tempOption = document.createElement('option');
+                tempOption.value = "detected_new";
+                tempOption.textContent = "+ New Joke Type";
+                tempOption.style.fontWeight = "bold";
+                select.appendChild(tempOption);
+
+                // Restore the user's selection if they had one
+                if (currentValue) {
+                    select.value = currentValue;
+                } else {
+                    select.value = ""; // Enforce the disabled placeholder
+                }
+
             } catch (error) {
-                console.error("Error loading types", error);
+                console.error("Error loading types:", error);
             }
         }
 
-        function toggleNewTypeInput() {
+        function handleTypeChange() {
             const select = document.getElementById('typeSelect');
-            const newTypeGroup = document.getElementById('newTypeGroup');
-            if (select.value === 'new_type_option') {
-                newTypeGroup.classList.remove('hidden');
+            const customInput = document.getElementById('newType');
+            if (select.value === "detected_new") {
+                customInput.disabled = false;
+                customInput.focus();
             } else {
-                newTypeGroup.classList.add('hidden');
+                customInput.disabled = true;
+                customInput.value = '';
             }
         }
 
         async function submitJoke() {
             const setupField = document.getElementById('setup');
             const punchlineField = document.getElementById('punchline');
+            const typeField = document.getElementById('typeSelect');
             const newTypeField = document.getElementById('newType');
-            const selectField = document.getElementById('typeSelect');
-            const messageDiv = document.getElementById('message');
             const btn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('submitMessage');
 
-            const finalType = (selectField.value === 'new_type_option') ? newTypeField.value.trim() : selectField.value;
+            const selectedType = typeField.value;
+            const finalType = selectedType === 'detected_new' ? newTypeField.value.trim() : selectedType;
 
             if (!setupField.value.trim() || !punchlineField.value.trim() || !finalType) {
                 messageDiv.style.color = 'var(--error)';
-                messageDiv.innerText = "Please complete all fields.";
+                messageDiv.innerText = "Please fill in all fields.";
+                messageDiv.style.opacity = "1";
                 return;
             }
 
             btn.disabled = true;
             messageDiv.style.opacity = "1";
-            messageDiv.innerText = "";
+            messageDiv.style.color = 'var(--text-muted)';
+            messageDiv.innerText = "Submitting...";
 
             try {
-                const response = await fetch('/submit-api/submit', {
+                const response = await fetch(`${baseUrl}/submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -278,13 +310,12 @@
                     messageDiv.style.color = 'var(--success)';
                     messageDiv.innerText = "Success! Joke submitted for moderation.";
                     
-                    // Clear inputs
                     setupField.value = '';
                     punchlineField.value = '';
                     newTypeField.value = '';
-                    loadTypes();
+                    typeField.value = '';
+                    handleTypeChange();
 
-                    // Hide message after 5 seconds
                     setTimeout(() => {
                         messageDiv.style.opacity = "0";
                         setTimeout(() => { messageDiv.innerText = ""; }, 500);
@@ -297,7 +328,6 @@
                 messageDiv.style.color = 'var(--error)';
                 messageDiv.innerText = "Submission error. Please try again.";
                 
-                // Also hide error message after 5 seconds
                 setTimeout(() => {
                     messageDiv.style.opacity = "0";
                     setTimeout(() => { messageDiv.innerText = ""; }, 500);
@@ -307,6 +337,7 @@
             }
         }
 
+        document.getElementById('typeSelect').addEventListener('focus', loadTypes);
         loadTypes();
     </script>
 </body>

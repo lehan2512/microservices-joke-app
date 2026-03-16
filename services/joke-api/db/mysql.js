@@ -8,25 +8,39 @@ const config = require('../config');
 
 class MySQLRepository {
     constructor() {
+        this.initPool();
+    }
+
+    initPool() {
         try {
             this.pool = mysql.createPool(config.mysql);
 
+            // Container lifecycle management
             this.pool.on('error', (err) => {
                 console.error('CRITICAL: API Database pool error:', err.message);
                 if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.fatal) {
-                    // Force crash so Docker/Kubernetes can spin up a fresh container
-                    process.exit(1); 
+                    console.warn("MySQL connection lost. Attempting to heal connection pool...");
+                    this.refreshPool();
                 }
             });
-
         } catch (err) {
             throw new DatabaseError('Failed to initialize MySQL connection pool', err);
         }
     }
 
+    async refreshPool() {
+        try {
+            if (this.pool) {
+                await this.pool.end();
+            }
+        } catch (e) {
+            // Ignore errors during cleanup of a dead pool
+        }
+        this.initPool();
+    }
+
     async getTypeByName(name) {
         try {
-            // Fixes N+1: Fetches only the matching row directly via SQL
             const [rows] = await this.pool.execute(
                 'SELECT id, name FROM types WHERE LOWER(name) = LOWER(?) LIMIT 1', 
                 [name]
@@ -64,7 +78,6 @@ class MySQLRepository {
                 params.push(typeRow.id);
             }
             
-            // Note: Offset parameterization works securely in mysql2 .execute()
             query += ' ORDER BY j.id LIMIT 1 OFFSET ?';
             params.push(offset.toString()); 
 

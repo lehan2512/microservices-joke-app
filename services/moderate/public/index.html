@@ -46,7 +46,8 @@
             box-shadow: 0 12px 42px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
             width: 100%;
             max-width: 600px;
-            position: relative;
+            position: relative; /* Crucial for absolute positioning of the toast */
+            overflow: hidden; /* Keeps the toast animation clean inside the card */
         }
 
         .header {
@@ -80,7 +81,7 @@
         input[type="text"], select {
             width: 100%;
             padding: 12px 16px;
-            font-size: 16px; /* Slightly larger for readability */
+            font-size: 16px;
             font-family: 'Inter', sans-serif;
             border: 2px solid var(--border);
             border-radius: 8px;
@@ -90,12 +91,11 @@
             box-sizing: border-box;
         }
 
-        /* Improved Read-Only Styles */
         input:disabled, select:disabled {
-            background-color: #F0F2F5; /* Darker bg for better contrast */
-            color: var(--text-main) !important; /* Force readable text color */
-            -webkit-text-fill-color: var(--text-main); /* Fix for some browsers */
-            opacity: 1; /* Override default disabled opacity */
+            background-color: #F0F2F5;
+            color: var(--text-main) !important;
+            -webkit-text-fill-color: var(--text-main);
+            opacity: 1;
             cursor: default;
             border-color: #E2E4E9;
         }
@@ -162,6 +162,8 @@
 
         .hidden { display: none; }
 
+        #newTypeGroup { display: none; }
+
         select {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B778C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -177,6 +179,7 @@
             text-align: center;
         }
 
+        /* Updated Toast Styling */
         #toast {
             visibility: hidden;
             min-width: 250px;
@@ -185,7 +188,7 @@
             text-align: center;
             border-radius: 8px;
             padding: 16px;
-            position: fixed;
+            position: absolute; /* Positions it relative to the .container card */
             z-index: 1000;
             left: 50%;
             bottom: 30px;
@@ -218,63 +221,79 @@
 
         <main class="main">
             <div class="container">
-        <div class="header">
-            <h2>Joke Moderator</h2>
-        </div>
+                <div class="header">
+                    <h2>Joke Moderator</h2>
+                </div>
 
-        <div id="emptyState">Polling for new jokes...</div>
+                <div id="emptyState">Polling for new jokes...</div>
 
-        <div id="moderationArea">
-            <div class="form-group">
-                <label for="setup">Joke Setup</label>
-                <input type="text" id="setup" disabled>
-            </div>
-            <div class="form-group">
-                <label for="punchline">Punchline</label>
-                <input type="text" id="punchline" disabled>
-            </div>
-            <div class="form-group">
-                <label for="typeSelect">Joke Type</label>
-                <select id="typeSelect" disabled onchange="handleTypeChange()"></select>
-            </div>
-            <div class="form-group">
-                <label for="newType">Custom Joke Type</label>
-                <input type="text" id="newType" placeholder="None" disabled>
-            </div>
+                <div id="moderationArea">
+                    <div class="form-group">
+                        <label for="setup">Joke Setup</label>
+                        <input type="text" id="setup" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="punchline">Punchline</label>
+                        <input type="text" id="punchline" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="typeSelect">Joke Type</label>
+                        <select id="typeSelect" disabled onchange="handleTypeChange()"></select>
+                    </div>
+                    <div class="form-group" id="newTypeGroup">
+                        <label for="newType">Custom Joke Type</label>
+                        <input type="text" id="newType" placeholder="None" disabled>
+                    </div>
 
-            <div class="button-stack">
-                <button id="editBtn" class="btn btn-edit" onclick="enableEditing()">Edit Joke</button>
-                <button id="saveBtn" class="btn btn-save hidden" onclick="saveEdits()">Save Changes</button>
-            </div>
+                    <div class="button-stack">
+                        <button id="editBtn" class="btn btn-edit" onclick="enableEditing()">Edit Joke</button>
+                        <button id="saveBtn" class="btn btn-save hidden" onclick="saveEdits()">Save Changes</button>
+                    </div>
 
-            <div class="section-divider"></div>
+                    <div class="section-divider"></div>
 
-            <div class="primary-actions">
-                <button id="approveBtn" class="btn btn-approve" onclick="approveJoke()">Approve</button>
-                <button id="rejectBtn" class="btn btn-reject" onclick="rejectJoke()">Reject</button>
-            </div>
-        </div>
+                    <div class="primary-actions">
+                        <button id="approveBtn" class="btn btn-approve" onclick="approveJoke()">Approve</button>
+                        <button id="rejectBtn" class="btn btn-reject" onclick="rejectJoke()">Reject</button>
+                    </div>
+                </div>
+
+                <div id="toast"></div>
             </div>
         </main>
     </div>
 
-    <div id="toast"></div>
-
     <script>
-        (function markActive(){
-            try{
-                const path = window.location.pathname;
-                const map = [{id:'nav-joke', match:'/joke-api'},{id:'nav-submit', match:'/submit-api'},{id:'nav-moderate', match:'/moderate-api'}];
-                map.forEach(m=>{ const el=document.getElementById(m.id); if(!el) return; if(path.startsWith(m.match)) el.classList.add('active'); });
-            }catch(e){}
+        const baseUrl = '/moderate-api';
+
+        (function setupNavigation(){
+            const path = window.location.pathname;
+            const map = [
+                { id: 'nav-joke', match: '/joke-api' },
+                { id: 'nav-submit', match: '/submit-api' },
+                { id: 'nav-moderate', match: '/moderate-api' }
+            ];
+
+            map.forEach(m => { 
+                const el = document.getElementById(m.id); 
+                if (!el) return; 
+                el.href = m.match; 
+                if (path.startsWith(m.match)) {
+                    el.classList.add('active'); 
+                }
+            });
         })();
+
         let pollingInterval;
 
         async function loadTypes() {
             try {
-                const response = await fetch('/moderate-api/types');
-                const types = await response.json();
                 const select = document.getElementById('typeSelect');
+                const currentValue = select.value; // Remember the current selection
+
+                const response = await fetch(`${baseUrl}/types`);
+                const types = await response.json();
+                
                 select.innerHTML = '';
                 types.forEach(type => {
                     const option = document.createElement('option');
@@ -282,6 +301,16 @@
                     option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
                     select.appendChild(option);
                 });
+
+                // Add the static "+ New Type" option
+                const newTypeOption = document.createElement('option');
+                newTypeOption.value = "detected_new";
+                newTypeOption.textContent = "+ New Type";
+                select.appendChild(newTypeOption);
+
+                if (currentValue) {
+                    select.value = currentValue;
+                }
             } catch (error) {
                 console.error("Error loading types");
             }
@@ -298,10 +327,15 @@
         function handleTypeChange() {
             const select = document.getElementById('typeSelect');
             const customInput = document.getElementById('newType');
-            if (select.value === "detected_new" && !select.disabled) {
-                customInput.disabled = false;
+            const customGroup = document.getElementById('newTypeGroup');
+
+            if (select.value === "detected_new") {
+                customGroup.style.display = 'block'; 
+                customInput.disabled = select.disabled; 
             } else {
+                customGroup.style.display = 'none';
                 customInput.disabled = true;
+                customInput.value = "";
             }
         }
 
@@ -333,7 +367,7 @@
 
         async function pollForJokes() {
             try {
-                const response = await fetch('/moderate-api/moderate');
+                const response = await fetch(`${baseUrl}/moderate`);
                 const modArea = document.getElementById('moderationArea');
                 const emptyState = document.getElementById('emptyState');
 
@@ -347,6 +381,22 @@
                     document.getElementById('setup').value = joke.setup;
                     document.getElementById('punchline').value = joke.punchline;
                     
+                    const typeSelect = document.getElementById('typeSelect');
+                    const newTypeInput = document.getElementById('newType');
+                    
+                    const typeExists = Array.from(typeSelect.options).some(opt => opt.value === joke.type);
+
+                    if (typeExists && joke.type !== 'detected_new') {
+                        typeSelect.value = joke.type;
+                    } else {
+                        typeSelect.value = "detected_new";
+                        newTypeInput.value = joke.type || "";
+                    }
+
+                    // Sync UI visibility
+                    handleTypeChange();
+                    
+                    // Reset editing state to disabled
                     const inputs = ['setup', 'punchline', 'typeSelect', 'newType'];
                     inputs.forEach(id => document.getElementById(id).disabled = true);
                     
@@ -354,22 +404,6 @@
                     document.getElementById('saveBtn').classList.add('hidden');
                     toggleActionButtons(false);
                     
-                    const typeSelect = document.getElementById('typeSelect');
-                    const newTypeInput = document.getElementById('newType');
-                    const typeExists = Array.from(typeSelect.options).some(opt => opt.value === joke.type);
-
-                    if (typeExists) {
-                        typeSelect.value = joke.type;
-                        newTypeInput.value = "";
-                    } else {
-                        const tempOption = document.createElement('option');
-                        tempOption.value = "detected_new";
-                        tempOption.textContent = "New Type";
-                        tempOption.id = "tempNewOption";
-                        typeSelect.appendChild(tempOption);
-                        typeSelect.value = "detected_new";
-                        newTypeInput.value = joke.type;
-                    }
                 } else if (response.status === 204) {
                     emptyState.classList.remove('hidden');
                     modArea.style.display = 'none';
@@ -380,9 +414,6 @@
         }
 
         function startPolling() {
-            const tempOpt = document.getElementById('tempNewOption');
-            if (tempOpt) tempOpt.remove();
-            
             document.getElementById('moderationArea').style.display = 'none';
             document.getElementById('emptyState').classList.remove('hidden');
             loadTypes();
@@ -397,8 +428,13 @@
             const newType = document.getElementById('newType').value.trim();
             const finalType = (selectedType === 'detected_new') ? newType : selectedType;
 
+            if (selectedType === 'detected_new' && !newType) {
+                showToast("Please specify the custom type", true);
+                return;
+            }
+
             try {
-                const response = await fetch('/moderate-api/moderated', {
+                const response = await fetch(`${baseUrl}/moderated`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ setup, punchline, type: finalType })
@@ -418,6 +454,8 @@
             showToast("Joke Rejected", true);
             startPolling();
         }
+
+        document.getElementById('typeSelect').addEventListener('focus', loadTypes);
 
         loadTypes().then(startPolling);
     </script>
