@@ -6,7 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: jokes_db
     ports:
-      - "3306:3306"
+      - "4002:3306"
     volumes:
       - ./infra/db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql-data:/var/lib/mysql
@@ -17,7 +17,7 @@ services:
     image: mongo:latest
     container_name: joke-mongo
     ports:
-      - "27017:27017"
+      - "4002:27017"
     volumes:
       - ./infra/db-init/init.js:/docker-entrypoint-initdb.d/init.js
       - mongo-data:/data/db
@@ -35,11 +35,10 @@ services:
     build: ./services/joke-api
     container_name: joke-api
     restart: always
-    # ports:
-    #   - "3001:3001"
     environment:
-      - DB_TYPE=MYSQL
+      - DB_TYPE=${DB_TYPE:-MYSQL}
       - DB_HOST=joke-mysql
+      - DB_PASSWORD=${DB_PASSWORD}
       - MONGO_URI=mongodb://joke-mongo:27017
 
   joke-etl:
@@ -47,8 +46,9 @@ services:
     container_name: joke-etl
     restart: always
     environment:
-      - DB_TYPE=MYSQL
+      - DB_TYPE=${DB_TYPE:-MYSQL}
       - DB_HOST=joke-mysql
+      - DB_PASSWORD=${DB_PASSWORD}
       - MONGO_URI=mongodb://joke-mongo:27017
       - RABBITMQ_URL=amqp://joke-queue
     depends_on:
@@ -58,7 +58,7 @@ services:
     build: ./services/submit
     container_name: joke-submit
     # ports:
-    #   - "3002:3002"
+    #   - "4002:3200"
     environment:
       - RABBITMQ_URL=amqp://joke-queue
     volumes:
@@ -69,12 +69,12 @@ services:
   joke-moderate:
     build: ./services/moderate
     container_name: joke-moderate
-    # ports:
-    #   - "3003:3003"
     environment:
       - RABBITMQ_URL=amqp://joke-queue
-      - AUTH0_BASE_URL=http://localhost:8000/moderate-api
-      # In production, this would be AUTH0_BASE_URL=http://20.205.40.175/moderate-api
+      - AUTH0_SECRET=${AUTH0_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
+      - AUTH0_BASE_URL=${AUTH0_BASE_URL}
     volumes:
       - moderate-cache:/usr/src/app/cache
     depends_on:

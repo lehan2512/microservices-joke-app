@@ -23,3 +23,7 @@ scripts/rename-services.ps1
 # Crash logs
 crash.log
 crash.*.log
+
+# config files
+.env
+

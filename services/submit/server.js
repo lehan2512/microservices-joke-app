@@ -6,7 +6,7 @@ const swaggerDocument = require('./swagger.json');
 const { connectQueue, publishJoke, CACHE_FILE } = require('./queue');
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3200;
 
 app.use(express.json());
 app.use(express.static('public'));

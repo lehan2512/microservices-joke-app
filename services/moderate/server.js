@@ -5,7 +5,7 @@ const { auth } = require('express-openid-connect');
 const { connectQueue, getJokeFromQueue, publishModeratedJoke, CACHE_FILE } = require('./queue');
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3300;
 app.set('trust proxy', true);
 const externalBaseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:8000/moderate-api';
 
