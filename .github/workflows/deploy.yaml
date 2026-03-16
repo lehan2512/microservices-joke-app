@@ -65,7 +65,7 @@ jobs:
       # ==========================================
       # JOKE VM DEPLOYMENT
       # ==========================================
-      - name: Copy Compose File to Joke VM
+      - name: Copy All Files to Joke VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.JOKE_VM_IP }}
@@ -74,22 +74,10 @@ jobs:
           proxy_host: ${{ secrets.GATEWAY_IP }}
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
-          source: "infra/deploy/joke-compose.yaml"
+          source: "infra/deploy/joke-compose.yaml,infra/db-init/init.sql"
           target: "/home/azureuser/"
-          strip_components: 2 # Strips infra/deploy/ so the file lands directly in the home folder
-
-      - name: Copy SQL Init Script to Joke VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.JOKE_VM_IP }}
-          username: azureuser
-          key: ${{ secrets.VM_SSH_KEY }}
-          proxy_host: ${{ secrets.GATEWAY_IP }}
-          proxy_username: azureuser
-          proxy_key: ${{ secrets.VM_SSH_KEY }}
-          source: "infra/db-init/init.sql"
-          target: "/home/azureuser/infra/db-init/"
           strip_components: 2
+          timeout: 60s
 
       - name: Deploy to Joke VM
         uses: appleboy/ssh-action@v1.0.3
@@ -101,10 +89,14 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            mv /home/azureuser/joke-compose.yaml /home/azureuser/docker-compose.yaml
+            # Force overwrite the old compose file with the new one
+            mv -f /home/azureuser/joke-compose.yaml /home/azureuser/docker-compose.yaml
+            
+            # Login and Refresh
             echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
-            # Target Grade Option: Dynamically inject DB variable and profile
+            
+            # Start up
             sudo DB_TYPE=MYSQL docker compose --profile mysql up -d
       
       # ==========================================
@@ -133,7 +125,7 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            mv /home/azureuser/submit-compose.yaml /home/azureuser/docker-compose.yaml
+            mv -f /home/azureuser/submit-compose.yaml /home/azureuser/docker-compose.yaml
             echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
             sudo docker compose up -d
@@ -164,7 +156,7 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            mv /home/azureuser/moderate-compose.yaml /home/azureuser/docker-compose.yaml
+            mv -f /home/azureuser/moderate-compose.yaml /home/azureuser/docker-compose.yaml
             echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
             sudo docker compose up -d

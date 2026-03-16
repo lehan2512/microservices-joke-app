@@ -11,7 +11,7 @@ services:
     profiles: ["mysql"]
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./infra/db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 
   mongo:
