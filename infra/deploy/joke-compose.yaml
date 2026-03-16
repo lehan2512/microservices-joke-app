@@ -8,7 +8,11 @@ services:
     ports: ["3306:3306"]
     networks:
       - joke-network
-    profiles: ["mysql"] # CHANGED THIS
+    profiles: ["mysql"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+
 
   mongo:
     image: mongo:latest
@@ -16,15 +20,19 @@ services:
     ports: ["27017:27017"]
     networks:
       - joke-network
-    profiles: ["mongo"] # CHANGED THIS
+    profiles: ["mongo"] 
 
   joke-api:
     image: ghcr.io/lehan2512/joke-api:latest
     restart: unless-stopped
     ports: ["3001:3001"]
     environment:
-      - DB_TYPE=${DB_TYPE:-MONGO} # Allows dynamic injection, defaults to MONGO
+      - DB_TYPE=${DB_TYPE:-MONGO}
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=joke_user
+      - DB_PASSWORD=joke_password
+      - DB_NAME=jokes_db
       - MONGO_URI=mongodb://mongo:27017
     volumes:
       - joke_api_data:/usr/src/app/data
