@@ -11,12 +11,12 @@
         :root {
             --primary-purple: #4B1A70;
             --primary-hover: #612B9F;
-            --accent-purple: #8A40C6;
             --background: #F4F5F7;
             --surface: #FFFFFF;
             --text-main: #172B4D;
             --text-muted: #6B778C;
             --success: #00875A;
+            --error: #DE350B;
             --border: #DFE1E6;
         }
 
@@ -29,48 +29,43 @@
             padding: 0;
         }
 
-        /* Layout: side navigation + main content */
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        /* --- UNIFIED SIDEBAR CSS --- */
+        .layout { display: flex; min-height: 100vh; }
+        
         .sidebar {
             width: 220px;
-            background: linear-gradient(180deg, var(--primary-purple), var(--accent-purple));
+            background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover));
             color: white;
             padding: 28px 18px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 18px;
         }
-
         .nav-brand {
             font-weight: 800;
             font-size: 18px;
             letter-spacing: -0.4px;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
-
         .nav-links {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 12px;
         }
-
         .nav-links a {
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             padding: 10px 12px;
             border-radius: 8px;
             font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s ease;
         }
-
         .nav-links a.active, .nav-links a:hover {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
         }
+        /* -------------------------- */
 
         .main {
             flex: 1;
@@ -90,10 +85,7 @@
             text-align: center;
         }
 
-        .header {
-            margin-bottom: 32px;
-        }
-
+        .header { margin-bottom: 32px; }
         h1 {
             font-size: 28px;
             font-weight: 800;
@@ -109,11 +101,7 @@
             text-align: left;
             align-items: flex-end;
         }
-
-        .form-group {
-            flex: 1;
-        }
-
+        .form-group { flex: 1; }
         label {
             display: block;
             font-size: 11px;
@@ -142,13 +130,6 @@
             background-size: 16px;
         }
 
-        select:focus {
-            outline: none;
-            border-color: var(--primary-purple);
-            background-color: var(--surface);
-            box-shadow: 0 0 0 3px rgba(75, 26, 112, 0.1);
-        }
-
         #fetchBtn {
             padding: 14px 28px;
             font-size: 16px;
@@ -161,16 +142,8 @@
             transition: all 0.2s ease;
             white-space: nowrap;
         }
-
-        #fetchBtn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        #fetchBtn:disabled {
-            background-color: var(--text-muted);
-            cursor: not-allowed;
-        }
+        #fetchBtn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        #fetchBtn:disabled { background-color: var(--text-muted); cursor: not-allowed; transform: none; }
 
         .joke-stage {
             margin-top: 20px;
@@ -179,9 +152,9 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             min-height: 240px;
-            display: block;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             gap: 16px;
             position: relative;
             overflow: hidden;
@@ -193,7 +166,6 @@
             background: white;
             box-shadow: 0 6px 18px rgba(9,30,66,0.06);
         }
-
         .joke-setup {
             font-size: 32px;
             font-weight: 700;
@@ -203,7 +175,6 @@
             opacity: 0;
             transition: opacity 0.4s ease;
         }
-
         .joke-punchline {
             font-size: 28px;
             font-weight: 800;
@@ -214,36 +185,8 @@
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .nav-btn {
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 700;
-            color: white;
-            background-color: var(--primary-purple);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: none;
-        }
-
-        .nav-btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .nav-btn:disabled {
-            background-color: #E2E2E2;
-            color: #A0A0A0;
-            cursor: not-allowed;
-        }
-
         .fade-in { opacity: 1 !important; }
-        
-        .pop-in {
-            opacity: 1 !important;
-            transform: scale(1) translateY(0) !important;
-        }
+        .pop-in { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
 
         .spinner {
             width: 20px;
@@ -254,7 +197,6 @@
             animation: spin 1s linear infinite;
             display: none;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -272,103 +214,79 @@
 
         <main class="main">
             <div class="container">
-        <div class="header">
-            <h1>Want to hear a joke?</h1>
-        </div>
-        
-        <div class="controls-row">
-            <div class="form-group">
-                <label for="typeSelect">Joke Type</label>
-                <select id="typeSelect">
-                    <option value="any">Any Joke Type</option>
-                </select>
-            </div>
-            <div class="form-group" style="max-width:120px;">
-                <label for="countInput">Count</label>
-                <input type="number" id="countInput" min="1" max="20" value="1" />
-            </div>
-            
-            <button id="fetchBtn" onclick="fetchJoke()">
-                <span id="btnText">Fetch Jokes</span>
-                <div class="spinner" id="btnSpinner"></div>
-            </button>
-        </div>
+                <div class="header">
+                    <h1>Want to hear a joke?</h1>
+                </div>
+                
+                <div class="controls-row">
+                    <div class="form-group">
+                        <label for="typeSelect">Joke Type</label>
+                        <select id="typeSelect">
+                            <option value="any">Any Category</option>
+                        </select>
+                    </div>
+                    
+                    <button id="fetchBtn" onclick="fetchJoke()">
+                        <span id="btnText">Fetch Joke</span>
+                        <div class="spinner" id="btnSpinner"></div>
+                    </button>
+                </div>
 
-        <div class="joke-stage">
-            <div id="jokeList"></div>
-            <div style="display:flex;gap:16px;align-items:center;margin-top:24px;justify-content:center">
-                <button id="prevBtn" class="nav-btn">Previous</button>
-                <div id="jokeCounter" style="color:var(--text-muted);font-weight:600;min-width:60px;text-align:center"></div>
-                <button id="nextBtn" class="nav-btn">Next</button>
-            </div>
-        </div>
+                <div class="joke-stage">
+                    <div id="jokeContainer"></div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        // mark active nav link based on path
-        (function markActive(){
-            try{
-                const path = window.location.pathname;
-                const map = [{id:'nav-joke', match:'/joke-api'},{id:'nav-submit', match:'/submit-api'},{id:'nav-moderate', match:'/moderate-api'}];
-                map.forEach(m=>{ const el=document.getElementById(m.id); if(!el) return; if(path.startsWith(m.match) || (path==='/' && m.match==='/joke-api')) el.classList.add('active'); });
-            }catch(e){}
-        })();
-        let currentJokes = [];
-        let currentIndex = 0;
+        const baseUrl = '/joke-api';
 
-        function renderCurrentJoke() {
-            const jokeList = document.getElementById('jokeList');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const counter = document.getElementById('jokeCounter');
-            jokeList.innerHTML = '';
-            if (!Array.isArray(currentJokes) || currentJokes.length === 0) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-                counter.innerText = '';
-                return;
-            }
-            const j = currentJokes[currentIndex];
+        (function setupNavigation(){
+            const path = window.location.pathname;
+            const map = [
+                { id: 'nav-joke', match: '/joke-api' },
+                { id: 'nav-submit', match: '/submit-api' },
+                { id: 'nav-moderate', match: '/moderate-api' }
+            ];
+
+            map.forEach(m => { 
+                const el = document.getElementById(m.id); 
+                if (!el) return; 
+                el.href = m.match; 
+                if (path.startsWith(m.match)) {
+                    el.classList.add('active'); 
+                }
+            });
+        })();
+
+        function renderJoke(joke) {
+            const container = document.getElementById('jokeContainer');
+            container.innerHTML = '';
+            if (!joke) return;
+
             const card = document.createElement('div');
             card.className = 'joke-card';
-            const su = document.createElement('div'); su.className = 'joke-setup'; su.innerText = j.setup;
-            const pu = document.createElement('div'); pu.className = 'joke-punchline'; pu.innerText = j.punchline;
-            card.appendChild(su); card.appendChild(pu);
-            jokeList.appendChild(card);
-            // reveal with small delays
+            
+            const su = document.createElement('div'); 
+            su.className = 'joke-setup'; 
+            su.innerText = joke.setup;
+            
+            const pu = document.createElement('div'); 
+            pu.className = 'joke-punchline'; 
+            pu.innerText = joke.punchline;
+            
+            card.appendChild(su); 
+            card.appendChild(pu);
+            container.appendChild(card);
+
             setTimeout(() => { su.classList.add('fade-in'); }, 80);
-            setTimeout(() => { pu.classList.add('pop-in'); }, 3000);
-
-            if (currentJokes.length > 1) {
-                prevBtn.style.display = 'inline-block';
-                nextBtn.style.display = 'inline-block';
-                prevBtn.disabled = (currentIndex === 0);
-                nextBtn.disabled = (currentIndex === currentJokes.length - 1);
-                counter.innerText = `${currentIndex + 1} / ${currentJokes.length}`;
-            } else {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
-                counter.innerText = '';
-            }
-        }
-
-        function nextJoke() {
-            if (!currentJokes || currentIndex >= currentJokes.length - 1) return;
-            currentIndex++;
-            renderCurrentJoke();
-        }
-
-        function prevJoke() {
-            if (!currentJokes || currentIndex <= 0) return;
-            currentIndex--;
-            renderCurrentJoke();
+            setTimeout(() => { pu.classList.add('pop-in'); }, 2000);
         }
 
         async function loadTypes() {
             try {
-                const response = await fetch('/joke-api/types');
+                const response = await fetch(`${baseUrl}/types`);
                 const types = await response.json();
                 const select = document.getElementById('typeSelect');
                 
@@ -380,33 +298,23 @@
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error("Failed to load types via Gateway", error);
+                console.error("Failed to load types", error);
             }
         }
 
-        document.getElementById('typeSelect').addEventListener('focus', loadTypes);
-
-        document.getElementById('nextBtn').addEventListener('click', nextJoke);
-        document.getElementById('prevBtn').addEventListener('click', prevJoke);
-
-        // Timestamp (ms) when current rate-limit window expires. 0 = not rate-limited
         let rateLimitExpires = 0;
 
         function disableUntil(seconds) {
             const btn = document.getElementById('fetchBtn');
             const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
-            // compute expiry timestamp
             rateLimitExpires = Date.now() + (seconds * 1000);
-
             btn.disabled = true;
-            // hide spinner and ensure text is visible for countdown
-            btnSpinner.style.display = 'none';
             btnText.style.display = 'inline';
 
             let remaining = seconds;
-            const origText = btnText.textContent;
-            btnText.textContent = `try again in ${remaining}s`;
+            const origText = "Fetch Joke";
+            
+            btnText.textContent = `Retry in ${remaining}s`;
 
             const timer = setInterval(() => {
                 remaining -= 1;
@@ -416,78 +324,55 @@
                     btn.disabled = false;
                     btnText.textContent = origText;
                 } else {
-                    btnText.textContent = `try again in ${remaining}s`;
+                    btnText.textContent = `Retry in ${remaining}s`;
                 }
             }, 1000);
         }
 
         async function fetchJoke() {
             const type = document.getElementById('typeSelect').value;
-            const count = Math.max(1, Math.min(20, parseInt(document.getElementById('countInput').value || '1')));
-            const jokeList = document.getElementById('jokeList');
+            const container = document.getElementById('jokeContainer');
             const btn = document.getElementById('fetchBtn');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
 
-            // Reset UI
-            jokeList.innerHTML = '';
-
-            // Loading UI
+            container.innerHTML = '';
             btn.disabled = true;
             btnText.style.display = 'none';
             btnSpinner.style.display = 'inline-block';
 
             try {
-                const response = await fetch(`/joke-api/joke/${type}?count=${count}`);
+                const response = await fetch(`${baseUrl}/joke/${type}?count=1`);
 
                 if (response.status === 429) {
-                    // rate limit handling
-                    let retryAfter = null;
-                    const ra = response.headers.get('retry-after');
-                    if (ra) retryAfter = parseInt(ra, 10);
-                    const xr = response.headers.get('x-ratelimit-reset');
-                    if (!retryAfter && xr) {
-                        const v = Number(xr);
-                        if (!Number.isNaN(v)) {
-                            if (v > 1e9) retryAfter = Math.max(0, Math.floor(v - Date.now() / 1000));
-                            else retryAfter = Math.max(0, Math.floor(v));
-                        }
-                    }
-                    if (!retryAfter || Number.isNaN(retryAfter)) retryAfter = 60;
-
-                    currentJokes = [];
-                    renderCurrentJoke();
-                    jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup" style="color:#dc3545;opacity:1">Rate limit exceeded. Try again later.</div></div>`;
+                    let retryAfter = parseInt(response.headers.get('retry-after')) || 60;
+                    container.innerHTML = `
+                        <div class="joke-card">
+                            <div class="joke-setup" style="color:#DE350B; opacity:1; font-size: 20px;">
+                               Rate limit exceeded.
+                            </div>
+                        </div>`;
                     disableUntil(retryAfter);
                 } else {
                     const jokes = await response.json();
-                    if (!Array.isArray(jokes) || jokes.length === 0) {
-                        jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">No jokes found here. Try another category?</div></div>`;
-                        currentJokes = [];
-                        renderCurrentJoke();
+                    if (Array.isArray(jokes) && jokes.length > 0) {
+                        renderJoke(jokes[0]);
                     } else {
-                        // multiple jokes OR single joke: keep in memory and show one-at-a-time
-                        currentJokes = jokes;
-                        currentIndex = 0;
-                        renderCurrentJoke();
+                        container.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">No jokes found.</div></div>`;
                     }
                 }
             } catch (error) {
-                jokeList.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">Connection error. Is the API running?</div></div>`;
-                currentJokes = [];
-                renderCurrentJoke();
+                container.innerHTML = `<div class="joke-card"><div class="joke-setup fade-in">Connection error.</div></div>`;
             } finally {
-                // Always hide spinner
-                btnSpinner.style.display = 'none';
-                if (rateLimitExpires && Date.now() < rateLimitExpires) {
+                if (Date.now() >= rateLimitExpires) {
+                    btnSpinner.style.display = 'none';
                     btnText.style.display = 'inline';
-                } else {
                     btn.disabled = false;
-                    btnText.style.display = 'inline';
                 }
             }
         }
 
+        document.getElementById('typeSelect').addEventListener('focus', loadTypes);
         loadTypes();
     </script>
 </body>

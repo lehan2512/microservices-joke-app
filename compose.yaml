@@ -1,86 +1,88 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: jokes_mysql
+    container_name: joke-mysql
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: jokes_db
     ports:
-      - "3306:3306"
+      - "4002:3306"
     volumes:
       - ./infra/db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - mysql_data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     profiles:
       - mysql
 
   mongo:
     image: mongo:latest
-    container_name: jokes_mongo
+    container_name: joke-mongo
     ports:
-      - "27017:27017"
+      - "4002:27017"
     volumes:
       - ./infra/db-init/init.js:/docker-entrypoint-initdb.d/init.js
-      - mongo_data:/data/db
+      - mongo-data:/data/db
     profiles:
       - mongo
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: jokes_rabbitmq
+    container_name: joke-queue
     ports:
-      - "5672:5672"   # Message broker port
-      - "15672:15672" # Management UI port
+      - "5672:5672"   
+      - "15672:15672" 
 
   joke-api:
     build: ./services/joke-api
-    container_name: joke_api
+    container_name: joke-api
     restart: always
-    ports:
-      - "3001:3001"
     environment:
-      - DB_TYPE=MYSQL
-      - DB_HOST=jokes_mysql
-      - MONGO_URI=mongodb://jokes_mongo:27017
+      - DB_TYPE=${DB_TYPE:-MYSQL}
+      - DB_HOST=joke-mysql
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MONGO_URI=mongodb://joke-mongo:27017
 
   joke-etl:
     build: ./services/joke-etl
-    container_name: joke_etl
+    container_name: joke-etl
     restart: always
     environment:
-      - DB_TYPE=MYSQL
-      - DB_HOST=jokes_mysql
-      - MONGO_URI=mongodb://jokes_mongo:27017
-      - RABBITMQ_URL=amqp://jokes_rabbitmq
+      - DB_TYPE=${DB_TYPE:-MYSQL}
+      - DB_HOST=joke-mysql
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MONGO_URI=mongodb://joke-mongo:27017
+      - RABBITMQ_URL=amqp://joke-queue
     depends_on:
       - rabbitmq
 
-  submit-app:
+  joke-submit:
     build: ./services/submit
-    container_name: submit_app
-    ports:
-      - "3002:3002"
+    container_name: joke-submit
+    # ports:
+    #   - "4002:3200"
     environment:
-      - RABBITMQ_URL=amqp://jokes_rabbitmq
+      - RABBITMQ_URL=amqp://joke-queue
     volumes:
-      - submit_cache:/usr/src/app/cache
+      - submit-cache:/usr/src/app/cache
     depends_on:
       - rabbitmq
 
-  moderate-app:
+  joke-moderate:
     build: ./services/moderate
-    container_name: moderate_app
-    ports:
-      - "3003:3003"
+    container_name: joke-moderate
     environment:
-      - RABBITMQ_URL=amqp://jokes_rabbitmq
+      - RABBITMQ_URL=amqp://joke-queue
+      - AUTH0_SECRET=${AUTH0_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_ISSUER_BASE_URL=${AUTH0_ISSUER_BASE_URL}
+      - AUTH0_BASE_URL=${AUTH0_BASE_URL}
     volumes:
-      - moderate_cache:/usr/src/app/cache
+      - moderate-cache:/usr/src/app/cache
     depends_on:
       - rabbitmq
 
-  kong:
+  api-gateway:
     image: kong:latest 
-    container_name: kong_gateway
+    container_name: joke-gateway
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yaml
@@ -93,11 +95,11 @@ services:
       - ./infra/api-gateway/kong.yaml:/kong/declarative/kong.yaml
     depends_on:
       - joke-api
-      - submit-app
-      - moderate-app
+      - joke-submit
+      - joke-moderate
 
 volumes:
-  mysql_data:
-  mongo_data:
-  submit_cache:
-  moderate_cache:
+  mysql-data:
+  mongo-data:
+  submit-cache:
+  moderate-cache:

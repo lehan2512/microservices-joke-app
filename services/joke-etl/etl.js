@@ -30,7 +30,7 @@ async function startETL() {
 
         console.log(`ETL Service listening on "${MODERATED_QUEUE}"...`);
 
-        // Only take 1 message at a time
+        // Strict QoS: Process only 1 message at a time to ensure persistence safety
         channel.prefetch(1);
 
         channel.consume(MODERATED_QUEUE, async (msg) => {
@@ -46,13 +46,11 @@ async function startETL() {
 
                 } catch (error) {
                     // 3. HANDLING FAILURE
-                    console.error("DB Write Failed. Requeueing message and resetting connection:", error.message);
+                    console.error("DB Write Failed. Requeueing message:", error.message);
                     
                     try {
                         // Nack so it stays in queue
                         channel.nack(msg, false, true);
-                        // Close connection to purge stale state/pools
-                        await connection.close();
                     } catch (e) {
                         console.error("Error during failover cleanup:", e.message);
                     }
@@ -71,7 +69,9 @@ async function processPayload(payload, { dbModule = db, channel = null } = {}) {
 
     const isNewType = await dbModule.insertJokeAndType(setup, punchline, safeType);
 
+    // Broadcast type update to submit/moderate instances via ECST
     if (isNewType && channel) {
+        console.log(`New type detected: ${safeType}. Broadcasting to exchange.`);
         const eventPayload = JSON.stringify({ type: safeType });
         channel.publish(TYPE_UPDATE_EXCHANGE, '', Buffer.from(eventPayload));
     }

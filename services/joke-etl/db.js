@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const { MongoClient } = require('mongodb');
 
 /**
- * Robust MySQL Provider with IP logging and Pool Refresh.
+ * MySQL Provider with IP logging and Pool Refresh.
  */
 class MySQLProvider {
     constructor() {
@@ -18,13 +18,19 @@ class MySQLProvider {
         };
         this.pool = mysql.createPool(this.config);
         console.log(`[DB] Initialized pool for host: ${this.config.host}`);
+        
+        // Container lifecycle management for dropped DB connections
+        this.pool.on('error', (err) => {
+            console.error('[DB] CRITICAL: Pool error:', err.message);
+            if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.fatal) {
+                process.exit(1);
+            }
+        });
     }
 
     async refreshPool() {
         console.warn(`[DB] Connection lost. Purging stale pool and re-resolving ${this.config.host}...`);
-        try {
-            await this.pool.end();
-        } catch (e) {}
+        try { await this.pool.end(); } catch (e) {}
         this.pool = mysql.createPool(this.config);
     }
 
@@ -32,25 +38,21 @@ class MySQLProvider {
         let connection;
         try {
             connection = await this.pool.getConnection();
-            
-            // Safely log connection address if available
-            const addr = (connection.connection && connection.connection._address) 
-                ? connection.connection._address.address 
-                : 'unknown';
-            console.log(`[DB] Using connection to ${this.config.host} at IP: ${addr}`);
-
             await connection.beginTransaction();
-            await connection.execute('INSERT IGNORE INTO types (name) VALUES (?)', [typeName]);
+            
+            const [typeResult] = await connection.execute('INSERT IGNORE INTO types (name) VALUES (?)', [typeName]);
+            const isNewType = typeResult.affectedRows === 1;
+            
             const [typeRows] = await connection.execute('SELECT id FROM types WHERE name = ?', [typeName]);
             const typeId = typeRows[0].id;
+            
             await connection.execute('INSERT INTO jokes (type_id, setup, punchline) VALUES (?, ?, ?)', [typeId, setup, punchline]);
             await connection.commit();
-            return true;
+            
+            return isNewType;
         } catch (err) {
             console.error(`[DB] FAILURE: ${err.message} (Code: ${err.code})`);
             if (connection) await connection.rollback();
-
-            // Refresh the pool immediately on connection issues
             if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT' || err.fatal) {
                 await this.refreshPool();
             }
@@ -66,9 +68,11 @@ class MongoProvider {
         const uri = process.env.MONGO_URI || 'mongodb://jokes_mongo:27017';
         this.client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
         this.db = null;
+        
         this.connectPromise = this.client.connect().then(() => {
             this.db = this.client.db(process.env.DB_NAME || 'jokes_db');
-        }).catch(() => {});
+            console.log('[DB] MongoDB connection established');
+        }).catch(err => console.error('[DB] Mongo connection failed:', err.message));
     }
 
     async ensureConnected() {
@@ -80,6 +84,7 @@ class MongoProvider {
         let isNewType = false;
         const typesCol = this.db.collection('types');
         const jokesCol = this.db.collection('jokes');
+        
         const existingType = await typesCol.findOne({ name: typeName });
         if (!existingType) {
             await typesCol.insertOne({ name: typeName });
