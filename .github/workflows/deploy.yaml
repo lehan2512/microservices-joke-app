@@ -89,15 +89,24 @@ jobs:
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            # Force overwrite the old compose file with the new one
             mv -f /home/azureuser/joke-compose.yaml /home/azureuser/docker-compose.yaml
             
-            # Login and Refresh
+            # 1. Capture the GitHub Variable (fallback to MYSQL if not set)
+            TARGET_DB="${{ vars.DB_TYPE }}"
+            if [ -z "$TARGET_DB" ]; then TARGET_DB="MYSQL"; fi
+            
+            # 2. Write it into a .env file so it survives container reboots
+            echo "DB_TYPE=$TARGET_DB" > /home/azureuser/.env
+            
+            # 3. Pull latest images
             echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             sudo docker compose pull
             
-            # Start up
-            sudo DB_TYPE=MYSQL docker compose --profile mysql up -d
+            # 4. Convert TARGET_DB to lowercase (mysql or mongo) to match the profile name
+            PROFILE_NAME=$(echo "$TARGET_DB" | tr '[:upper:]' '[:lower:]')
+            
+            # 5. Spin up only the requested database profile and the APIs
+            sudo docker compose --profile $PROFILE_NAME up -d
       
       # ==========================================
       # SUBMIT VM DEPLOYMENT

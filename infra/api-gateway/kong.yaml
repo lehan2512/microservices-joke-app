@@ -2,7 +2,7 @@ _format_version: "3.0"
 services:
   # 1. Joke API Service
   - name: joke-service
-    url: http://joke-api:3000
+    url: http://10.0.1.11:4000
     routes:
       - name: joke-route
         paths:
@@ -17,7 +17,7 @@ services:
 
   # 2. Submit Microservice
   - name: submit-service
-    url: http://joke-submit:3200
+    url: http://10.1.1.11:4200
     routes:
       - name: submit-route
         paths:
@@ -26,7 +26,7 @@ services:
 
   # 3. Moderate Microservice
   - name: moderate-service
-    url: http://joke-moderate:3300
+    url: http://10.1.1.12:4300
     routes:
       - name: moderate-route
         paths:
