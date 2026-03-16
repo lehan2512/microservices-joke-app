@@ -29,11 +29,8 @@
             padding: 0;
         }
 
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        .layout { display: flex; min-height: 100vh; }
+        
         .sidebar {
             width: 220px;
             background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover));
@@ -42,13 +39,31 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 18px;
         }
-
-        .nav-brand { font-weight: 800; font-size: 18px; }
-        .nav-links { display:flex; flex-direction:column; gap:6px; margin-top:12px }
-        .nav-links a { color: rgba(255,255,255,0.9); text-decoration:none; padding:10px 12px; border-radius:8px; font-weight:600 }
-        .nav-links a.active, .nav-links a:hover { background: rgba(255,255,255,0.08) }
+        .nav-brand {
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.4px;
+            margin-bottom: 20px;
+        }
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s ease;
+        }
+        .nav-links a.active, .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+        }
 
         .main { flex:1; display:flex; justify-content:center; align-items:center; padding:20px }
 
@@ -160,45 +175,45 @@
 
     <div class="layout">
         <nav class="sidebar" aria-label="Main navigation">
-            <div class="nav-brand">Jokes App</div>
+            <div class="nav-brand">Joke App</div>
             <div class="nav-links">
-                <a href="/submit-api" id="nav-submit">Submit a Joke</a>
-                <a href="/joke-api" id="nav-joke">Get Jokes</a>
-                <a href="/moderate-api" id="nav-moderate">Moderator</a>
+                <a href="/joke-api" id="nav-joke">Jokes</a>
+                <a href="/submit-api" id="nav-submit">Submit</a>
+                <a href="/moderate-api" id="nav-moderate">Moderate</a>
             </div>
         </nav>
 
         <main class="main">
             <div class="container">
-        <div class="header">
-            <h2>Submit a New Joke</h2>
-        </div>
-        
-        <div class="form-group">
-            <label for="setup">Joke Setup</label>
-            <input type="text" id="setup" placeholder="e.g: Why did the software engineer cross the road?" required>
-        </div>
+                <div class="header">
+                    <h2>Submit a New Joke</h2>
+                </div>
+                
+                <div class="form-group">
+                    <label for="setup">Joke Setup</label>
+                    <input type="text" id="setup" placeholder="e.g: Why did the software engineer cross the road?" required>
+                </div>
 
-        <div class="form-group">
-            <label for="punchline">Punchline</label>
-            <input type="text" id="punchline" placeholder="e.g: To get to the other git branch." required>
-        </div>
+                <div class="form-group">
+                    <label for="punchline">Punchline</label>
+                    <input type="text" id="punchline" placeholder="e.g: To get to the other git branch." required>
+                </div>
 
-        <div class="form-group">
-            <label for="typeSelect">Joke Type</label>
-            <select id="typeSelect" onchange="toggleNewTypeInput()">
-                <option value="new_type_option">Create New Joke Type</option>
-            </select>
-        </div>
+                <div class="form-group">
+                    <label for="typeSelect">Joke Type</label>
+                    <select id="typeSelect" onchange="handleTypeChange()">
+                        <option value="" disabled>Select a category...</option>
+                    </select>
+                </div>
 
-        <div class="form-group hidden" id="newTypeGroup">
-            <label for="newType">New Joke Type</label>
-            <input type="text" id="newType" placeholder="e.g., programming">
-        </div>
+                <div class="form-group hidden" id="newTypeGroup">
+                    <label for="newType">New Joke Type</label>
+                    <input type="text" id="newType" placeholder="e.g., programming">
+                </div>
 
-        <button id="submitBtn" onclick="submitJoke()">Submit Joke</button>
+                <button id="submitBtn" onclick="submitJoke()">Submit Joke</button>
 
-        <div id="message"></div>
+                <div id="message"></div>
             </div>
         </main>
     </div>
@@ -206,7 +221,6 @@
     <script>
         const baseUrl = '/submit-api';
 
-        // --- NAVIGATION ---
         (function setupNavigation(){
             const path = window.location.pathname;
             const map = [
@@ -248,11 +262,10 @@
                 tempOption.style.fontWeight = "bold";
                 select.appendChild(tempOption);
 
-                // Restore the user's selection if they had one
                 if (currentValue) {
                     select.value = currentValue;
                 } else {
-                    select.value = ""; // Enforce the disabled placeholder
+                    select.value = ""; 
                 }
 
             } catch (error) {
@@ -263,10 +276,14 @@
         function handleTypeChange() {
             const select = document.getElementById('typeSelect');
             const customInput = document.getElementById('newType');
+            const customGroup = document.getElementById('newTypeGroup');
+
             if (select.value === "detected_new") {
+                customGroup.classList.remove('hidden');
                 customInput.disabled = false;
                 customInput.focus();
             } else {
+                customGroup.classList.add('hidden');
                 customInput.disabled = true;
                 customInput.value = '';
             }
@@ -278,7 +295,7 @@
             const typeField = document.getElementById('typeSelect');
             const newTypeField = document.getElementById('newType');
             const btn = document.getElementById('submitBtn');
-            const messageDiv = document.getElementById('submitMessage');
+            const messageDiv = document.getElementById('message'); // Fixed ID from your older iteration
 
             const selectedType = typeField.value;
             const finalType = selectedType === 'detected_new' ? newTypeField.value.trim() : selectedType;

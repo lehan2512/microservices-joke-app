@@ -29,14 +29,42 @@
             padding: 0;
         }
 
-        .layout { display:flex; min-height:100vh }
+        .layout { display: flex; min-height: 100vh; }
+        
         .sidebar {
-            width:220px; background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover)); color:white; padding:28px 18px; box-sizing:border-box; display:flex; flex-direction:column; gap:18px;
+            width: 220px;
+            background: linear-gradient(180deg, var(--primary-purple), var(--primary-hover));
+            color: white;
+            padding: 28px 18px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
-        .nav-brand { font-weight:800; font-size:18px }
-        .nav-links { display:flex; flex-direction:column; gap:6px; margin-top:12px }
-        .nav-links a { color: rgba(255,255,255,0.9); text-decoration:none; padding:10px 12px; border-radius:8px; font-weight:600 }
-        .nav-links a.active, .nav-links a:hover { background: rgba(255,255,255,0.08) }
+        .nav-brand {
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.4px;
+            margin-bottom: 20px;
+        }
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s ease;
+        }
+        .nav-links a.active, .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+        }
+
         .main { flex:1; display:flex; justify-content:center; align-items:center; padding:20px }
 
         .container {
@@ -46,8 +74,8 @@
             box-shadow: 0 12px 42px rgba(9, 30, 66, 0.12), 0 0 1px rgba(9, 30, 66, 0.31);
             width: 100%;
             max-width: 600px;
-            position: relative; /* Crucial for absolute positioning of the toast */
-            overflow: hidden; /* Keeps the toast animation clean inside the card */
+            position: relative; 
+            overflow: hidden; 
         }
 
         .header {
@@ -161,7 +189,6 @@
         }
 
         .hidden { display: none; }
-
         #newTypeGroup { display: none; }
 
         select {
@@ -179,7 +206,6 @@
             text-align: center;
         }
 
-        /* Updated Toast Styling */
         #toast {
             visibility: hidden;
             min-width: 250px;
@@ -188,7 +214,7 @@
             text-align: center;
             border-radius: 8px;
             padding: 16px;
-            position: absolute; /* Positions it relative to the .container card */
+            position: absolute; 
             z-index: 1000;
             left: 50%;
             bottom: 30px;
@@ -289,7 +315,7 @@
         async function loadTypes() {
             try {
                 const select = document.getElementById('typeSelect');
-                const currentValue = select.value; // Remember the current selection
+                const currentValue = select.value; 
 
                 const response = await fetch(`${baseUrl}/types`);
                 const types = await response.json();
@@ -302,7 +328,6 @@
                     select.appendChild(option);
                 });
 
-                // Add the static "+ New Type" option
                 const newTypeOption = document.createElement('option');
                 newTypeOption.value = "detected_new";
                 newTypeOption.textContent = "+ New Type";
@@ -393,10 +418,8 @@
                         newTypeInput.value = joke.type || "";
                     }
 
-                    // Sync UI visibility
                     handleTypeChange();
                     
-                    // Reset editing state to disabled
                     const inputs = ['setup', 'punchline', 'typeSelect', 'newType'];
                     inputs.forEach(id => document.getElementById(id).disabled = true);
                     
