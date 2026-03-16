@@ -27,12 +27,8 @@ services:
     restart: unless-stopped
     ports: ["3001:3001"]
     environment:
-      - DB_TYPE=${DB_TYPE:-MONGO}
+      - DB_TYPE=${DB_TYPE:-MONGO} # Allows dynamic injection, defaults to MONGO
       - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=joke_user
-      - DB_PASSWORD=joke_password
-      - DB_NAME=jokes_db
       - MONGO_URI=mongodb://mongo:27017
     volumes:
       - joke_api_data:/usr/src/app/data
