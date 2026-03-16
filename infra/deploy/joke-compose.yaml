@@ -8,7 +8,11 @@ services:
     ports: ["3306:3306"]
     networks:
       - joke-network
-    profiles: ["mysql"] # CHANGED THIS
+    profiles: ["mysql"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
 
   mongo:
     image: mongo:latest
@@ -16,7 +20,7 @@ services:
     ports: ["27017:27017"]
     networks:
       - joke-network
-    profiles: ["mongo"] # CHANGED THIS
+    profiles: ["mongo"] 
 
   joke-api:
     image: ghcr.io/lehan2512/joke-api:latest
@@ -50,3 +54,5 @@ networks:
 
 volumes:
   joke_api_data:
+  mysql_data:
+  mongo_data:

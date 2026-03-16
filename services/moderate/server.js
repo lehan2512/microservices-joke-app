@@ -11,9 +11,12 @@ const config = {
   authRequired: true,
   auth0Logout: true,
   secret: 'a-long-randomly-generated-string-for-session-encryption-12345',
-  baseURL: 'http://localhost:8000/moderate-api',
+  baseURL: 'http://20.205.40.175/moderate-api',
   clientID: 'w7DnLzgXwsOG8XgORbCVHH3LhGIMMsc6',
-  issuerBaseURL: 'https://dev-kxm5q64g5rqu48xu.us.auth0.com'
+  issuerBaseURL: 'https://dev-kxm5q64g5rqu48xu.us.auth0.com',
+  getLoginState: (req, options) => {
+    return { returnTo: `/moderate-api${options.returnTo ||req.originalUrl }` };
+  },
 };
 
 // Simplified: Auth middleware enabled by default
