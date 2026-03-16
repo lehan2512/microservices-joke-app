@@ -38,7 +38,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - DB_TYPE=MYSQL
+      - DB_TYPE=MONGO
       - DB_HOST=jokes_mysql
       - MONGO_URI=mongodb://jokes_mongo:27017
 
