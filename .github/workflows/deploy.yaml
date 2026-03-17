@@ -105,7 +105,16 @@ jobs:
             # 4. Convert TARGET_DB to lowercase (mysql or mongo) to match the profile name
             PROFILE_NAME=$(echo "$TARGET_DB" | tr '[:upper:]' '[:lower:]')
             
-            # 5. Spin up only the requested database profile and the APIs
+            # 5. Stop and remove the non-target database container since both DB use same Port
+            if [ "$PROFILE_NAME" = "mongo" ]; then
+              sudo docker compose stop mysql 2>/dev/null || true
+              sudo docker compose rm -f mysql 2>/dev/null || true
+            else
+              sudo docker compose stop mongo 2>/dev/null || true
+              sudo docker compose rm -f mongo 2>/dev/null || true
+            fi
+
+            # 6. Spin up only the requested database profile and the APIs
             sudo docker compose --profile $PROFILE_NAME up -d
       
       # ==========================================
