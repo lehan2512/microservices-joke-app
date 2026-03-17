@@ -1,14 +1,27 @@
 /**
- * Joke Service Layer
- * Houses business logic, routing, and data processing. 
- * Agnostic to which database is currently running.
+ * @file service.js
+ * @description Joke Service Layer containing business logic for retrieving jokes.
+ * It is designed to be agnostic of the underlying database repository.
  */
 
+/**
+ * Service class for managing and retrieving jokes.
+ */
 class JokeService {
+    /**
+     * Creates an instance of JokeService.
+     * @param {Object} repository - The database repository implementation (MySQL or MongoDB).
+     */
     constructor(repository) {
         this.repository = repository; 
     }
 
+    /**
+     * Retrieves a specified number of random jokes of a given type.
+     * @param {string} type - The joke category (e.g., 'programming', 'pun'). Use 'any' for all types.
+     * @param {string|number} countStr - The number of jokes to retrieve.
+     * @returns {Promise<Array<Object>>} A list of selected joke objects.
+     */
     async getRandomJokes(type, countStr) {
         const count = Math.max(1, parseInt(countStr, 10) || 1);
         const isAny = !type || type.toLowerCase() === 'any';
@@ -45,6 +58,10 @@ class JokeService {
         return jokes.filter(joke => joke !== null); 
     }
 
+    /**
+     * Retrieves all available joke types.
+     * @returns {Promise<Array<string>>} A list of joke types.
+     */
     async getTypes() {
         return await this.repository.getTypes();
     }

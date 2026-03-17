@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Comprehensive System-Wide Resilience Verification Suite
+ * @fileoverview Comprehensive System-Wide Resilience Verification Suite.
  * 
  * This script automates the verification of system stability during infrastructure 
  * failures, specifically targeting database outages, RabbitMQ safety, and service isolation.
+ * It uses Docker Compose to manipulate service availability and checks system response.
  */
 
 const { spawnSync } = require('child_process');
@@ -19,7 +20,12 @@ const DB_SERVICE = 'mysql';
 const RABBITMQ_SERVICE = 'rabbitmq';
 
 /**
- * Helper: Executes a shell command and returns the result.
+ * Executes a shell command and returns the result.
+ * 
+ * @function runCommand
+ * @param {string} command - The base command to execute.
+ * @param {string[]} args - Array of arguments for the command.
+ * @returns {import('child_process').SpawnSyncReturns<Buffer>} The spawn result object.
  */
 function runCommand(command, args) {
     console.log(`> ${command} ${args.join(' ')}`);
@@ -31,7 +37,10 @@ function runCommand(command, args) {
 }
 
 /**
- * Helper: Fetches queue statistics directly from RabbitMQ.
+ * Fetches queue statistics directly from RabbitMQ.
+ * 
+ * @function getQueueStats
+ * @returns {Object} Object containing messages_ready and messages_unacknowledged counts.
  */
 function getQueueStats() {
     const result = spawnSync('docker', [
@@ -49,7 +58,12 @@ function getQueueStats() {
 }
 
 /**
- * Helper: Performs a GET request and returns status and body.
+ * Performs an HTTP GET request and returns status and body.
+ * 
+ * @async
+ * @function getRequest
+ * @param {string} url - The destination URL.
+ * @returns {Promise<{status: number, body: (Object|string)}>} The response status and parsed body.
  */
 async function getRequest(url) {
     return new Promise((resolve) => {
@@ -70,7 +84,13 @@ async function getRequest(url) {
 }
 
 /**
- * Helper: Performs a POST request and returns status and body.
+ * Performs an HTTP POST request and returns status and body.
+ * 
+ * @async
+ * @function postRequest
+ * @param {string} url - The destination URL.
+ * @param {Object} data - The JSON payload to send.
+ * @returns {Promise<{status: number, body: string}>} The response status and body string.
  */
 async function postRequest(url, data) {
     return new Promise((resolve) => {
@@ -93,14 +113,23 @@ async function postRequest(url, data) {
 }
 
 /**
- * Helper: Simple wait function.
+ * Suspends execution for a specified duration.
+ * 
+ * @async
+ * @function wait
+ * @param {number} ms - Milliseconds to wait.
+ * @returns {Promise<void>}
  */
 async function wait(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
 
 /**
- * Main Test Execution Logic
+ * Orchestrates the execution of multiple resilience test scenarios.
+ * 
+ * @async
+ * @function runResilienceSuite
+ * @returns {Promise<void>}
  */
 async function runResilienceSuite() {
     console.log("=== STARTING COMPREHENSIVE RESILIENCE VERIFICATION ===");

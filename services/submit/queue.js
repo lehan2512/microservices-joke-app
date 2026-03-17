@@ -1,3 +1,9 @@
+/**
+ * @file queue.js
+ * @description RabbitMQ interaction logic for the Joke Submission service.
+ * Handles publishing submitted jokes to the queue and synchronizing the joke types cache.
+ */
+
 let amqp;
 try {
     amqp = require('amqplib');
@@ -25,6 +31,11 @@ if (!fs.existsSync(CACHE_FILE)) {
     fs.writeFileSync(CACHE_FILE, JSON.stringify(["dad", "sports", "love"]));
 }
 
+/**
+ * Establishes connection to RabbitMQ, sets up required queues and exchanges.
+ * Listens for joke type updates to keep the local cache synchronized.
+ * @returns {Promise<void>}
+ */
 async function connectQueue() {
     try {
         if (!amqp) return;
@@ -74,6 +85,15 @@ async function connectQueue() {
     }
 }
 
+/**
+ * Publishes a new joke to the submission queue for moderation.
+ * @param {Object} jokeData - The joke to be submitted.
+ * @param {string} jokeData.setup - The setup of the joke.
+ * @param {string} jokeData.punchline - The punchline of the joke.
+ * @param {string} jokeData.type - The category/type of the joke.
+ * @throws {Error} - Throws error if RabbitMQ channel is not available.
+ * @returns {Promise<void>}
+ */
 async function publishJoke(jokeData) {
     if (!channel) {
         throw new Error("RabbitMQ channel not established. Service may be reconnecting.");

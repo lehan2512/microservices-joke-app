@@ -1,5 +1,6 @@
 /**
- * Database Entry Point / Factory
+ * @file db.js
+ * @description Database Entry Point / Factory.
  * Acts as the injection container, providing the fully assembled Service 
  * to the Express application without requiring any changes to server.js.
  */

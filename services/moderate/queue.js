@@ -1,3 +1,9 @@
+/**
+ * @file queue.js
+ * @description RabbitMQ interaction logic for the Joke Moderation service.
+ * Handles connections, joke consumption, and synchronization of joke type caches.
+ */
+
 let amqp;
 try {
     amqp = require('amqplib');
@@ -26,6 +32,11 @@ if (!fs.existsSync(CACHE_FILE)) {
     fs.writeFileSync(CACHE_FILE, JSON.stringify(["dad", "sports", "love"]));
 }
 
+/**
+ * Establishes connection to RabbitMQ, sets up required queues and exchanges.
+ * Listens for joke type updates to keep the local cache synchronized.
+ * @returns {Promise<void>}
+ */
 async function connectQueue() {
     try {
         if (!amqp) return;
@@ -76,6 +87,11 @@ async function connectQueue() {
     }
 }
 
+/**
+ * Retrieves a joke from the submission queue for moderation.
+ * Uses manual pulling (channel.get) instead of active subscription.
+ * @returns {Promise<Object|null>} - The joke data or null if the queue is empty.
+ */
 async function getJokeFromQueue() {
     if (!channel) return null;
     const msg = await channel.get(SUBMIT_QUEUE, { noAck: true }); 
@@ -85,6 +101,15 @@ async function getJokeFromQueue() {
     return null;
 }
 
+/**
+ * Publishes an approved/moderated joke to the moderated queue for ETL processing.
+ * @param {Object} jokeData - The moderated joke.
+ * @param {string} jokeData.setup - The setup of the joke.
+ * @param {string} jokeData.punchline - The punchline of the joke.
+ * @param {string} jokeData.type - The category/type of the joke.
+ * @throws {Error} - Throws error if RabbitMQ channel is not available.
+ * @returns {Promise<void>}
+ */
 async function publishModeratedJoke(jokeData) {
     if (!channel) {
         throw new Error("RabbitMQ channel not established. Service may be reconnecting.");
