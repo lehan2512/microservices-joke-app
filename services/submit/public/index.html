@@ -295,8 +295,7 @@
             const typeField = document.getElementById('typeSelect');
             const newTypeField = document.getElementById('newType');
             const btn = document.getElementById('submitBtn');
-            const messageDiv = document.getElementById('message'); // Fixed ID from your older iteration
-
+            const messageDiv = document.getElementById('message'); 
             const selectedType = typeField.value;
             const finalType = selectedType === 'detected_new' ? newTypeField.value.trim() : selectedType;
 
