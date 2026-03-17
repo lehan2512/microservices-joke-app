@@ -1,4 +1,18 @@
+# ==============================================================================
+# Kong API Gateway: Declarative Configuration
+# ==============================================================================
+# Purpose:
+#   Defines the routing logic, service mappings, and global/service-level plugins
+#   for the Kong API Gateway (DB-less mode).
+#
+# Role in the System:
+#   - Acts as the single entry point for all external traffic.
+#   - Maps public endpoints (e.g., /joke-api) to internal microservice addresses.
+#   - Enforces security policies like HTTPS redirection and rate limiting.
+# ==============================================================================
+
 _format_version: "3.0"
+
 services:
   # 1. Joke API Service
   - name: joke-service
@@ -13,7 +27,7 @@ services:
     plugins:
       - name: rate-limiting
         config:
-          minute: 8  
+          minute: 8  # Limits users to 8 requests per minute to prevent abuse
           policy: local
           hide_client_headers: false 
 

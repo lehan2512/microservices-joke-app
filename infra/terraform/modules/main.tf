@@ -1,3 +1,11 @@
+# ==============================================================================
+# File: modules/main.tf
+# Purpose: Reusable VM module logic.
+# Role: Defines the core resources for a Linux Virtual Machine, including 
+#       Network Interfaces (NICs) and their security group associations.
+# ==============================================================================
+
+# Create the Network Interface (NIC) for the VM
 resource "azurerm_network_interface" "nic" {
   name                = "${var.vm_name}-nic"
   location            = var.location
@@ -17,6 +25,7 @@ resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
   network_security_group_id = var.nsg_id
 }
 
+# Define the Linux Virtual Machine
 resource "azurerm_linux_virtual_machine" "vm" {
   name                  = var.vm_name
   resource_group_name   = var.rg_name
@@ -26,16 +35,19 @@ resource "azurerm_linux_virtual_machine" "vm" {
   network_interface_ids = [azurerm_network_interface.nic.id]
   custom_data           = var.custom_data
 
+  # SSH configuration for secure access
   admin_ssh_key {
     username   = "azureuser"
     public_key = var.ssh_public_key
   }
 
+  # OS Disk settings using Standard LRS for cost-efficiency
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
 
+  # Use Ubuntu 22.04 LTS as the base image
   source_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"

@@ -1,3 +1,10 @@
+# ==============================================================================
+# File: network.tf
+# Purpose: Defines the networking infrastructure on Azure.
+# Role: Establishes Resource Groups, VNETs, Subnets, and VNET Peering to enable 
+#       cross-region communication between microservices.
+# ==============================================================================
+
 # 1. The Core Resource Group
 resource "azurerm_resource_group" "rg" {
   name     = "${var.resource_prefix}-rg"

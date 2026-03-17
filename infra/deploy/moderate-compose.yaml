@@ -1,3 +1,16 @@
+# ==============================================================================
+# Docker Compose: Moderate Microservice
+# ==============================================================================
+# Purpose:
+#   Deploys the Moderation service, which provides a dashboard for admins 
+#   to approve or reject jokes before they are stored in the database.
+#
+# Role in the System:
+#   - Listens for new submissions from RabbitMQ.
+#   - Integrates with Auth0 for secure administrative access.
+#   - Publishes moderated jokes back to the exchange for the ETL service.
+# ==============================================================================
+
 services:
   moderate-app:
     image: ghcr.io/lehan2512/moderate-app:latest
