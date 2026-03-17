@@ -1,40 +1,134 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Submit Microservice API",
-    "version": "1.0.0",
-    "description": "API for submitting new jokes and retrieving joke types."
+    "title": "Joke App - Submit Microservice API",
+    "version": "1.1.0",
+    "description": "This microservice handles the submission of new jokes. It validates incoming jokes and publishes them to a RabbitMQ message broker for asynchronous moderation by the ETL service.",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    }
   },
+  "tags": [
+    {
+      "name": "Submissions",
+      "description": "Endpoints for submitting new jokes"
+    },
+    {
+      "name": "Metadata",
+      "description": "Endpoints for fetching system metadata like joke categories"
+    }
+  ],
   "paths": {
     "/submit": {
       "post": {
-        "summary": "Submit a new joke",
+        "tags": ["Submissions"],
+        "summary": "Submit a new joke for moderation",
+        "description": "Accepts a new joke containing a setup, punchline, and type. The joke is validated and pushed to the `submit` RabbitMQ queue. It will not be publicly available until approved by a moderator.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "setup": { "type": "string" },
-                  "punchline": { "type": "string" },
-                  "type": { "type": "string" }
-                },
-                "required": ["setup", "punchline", "type"]
+                "$ref": "#/components/schemas/JokeSubmission"
+              },
+              "example": {
+                "setup": "Why do programmers prefer dark mode?",
+                "punchline": "Because light attracts bugs.",
+                "type": "programming"
               }
             }
           }
         },
         "responses": {
-          "202": { "description": "Joke accepted and queued for moderation" }
+          "202": {
+            "description": "Joke accepted and queued successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Joke submitted for moderation!"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Missing or invalid fields",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Missing required fields"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - Broker connection failed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Failed to submit joke"
+                }
+              }
+            }
+          }
         }
       }
     },
     "/types": {
       "get": {
-        "summary": "Retrieve available joke types from local cache",
+        "tags": ["Metadata"],
+        "summary": "Retrieve cached joke types",
+        "description": "Fetches the list of all currently available joke categories. This data is served directly from a high-speed local volume cache (`types.json`), which is kept in sync by the ETL service via RabbitMQ fanout events.",
         "responses": {
-          "200": { "description": "A list of joke types" }
+          "200": {
+            "description": "A successful list of joke types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "example": ["general", "programming", "knock-knock", "dad"]
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - Cache file unreadable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Could not read types cache"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JokeSubmission": {
+        "type": "object",
+        "required": ["setup", "punchline", "type"],
+        "properties": {
+          "setup": {
+            "type": "string",
+            "description": "The premise or opening of the joke.",
+            "example": "Why did the developer go broke?"
+          },
+          "punchline": {
+            "type": "string",
+            "description": "The punchline of the joke.",
+            "example": "Because he used up all his cache."
+          },
+          "type": {
+            "type": "string",
+            "description": "The category the joke belongs to. Can be an existing type or a completely new one.",
+            "example": "programming"
+          }
         }
       }
     }
