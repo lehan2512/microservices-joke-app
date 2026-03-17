@@ -1,8 +1,22 @@
+# ==============================================================================
+# File: vms.tf
+# Purpose: Defines the virtual machine compute resources.
+# Role: Configures Network Security Groups (NSGs) for traffic control and 
+#       instantiates VM modules for each service (Gateway, Joke, Broker, etc.).
+# ==============================================================================
+
+# ==========================================
+# NETWORK SECURITY GROUPS (NSGs)
+# Defines firewall rules for both public and internal subnets.
+# ==========================================
+
+# Public-facing NSG for the API Gateway
 resource "azurerm_network_security_group" "gateway_nsg" {
   name                = "${var.resource_prefix}-gateway-nsg"
   location            = var.region_a
   resource_group_name = azurerm_resource_group.rg.name
 
+  # Allow Kong's proxy port (HTTP)
   security_rule {
     name                       = "Allow-HTTP-8000"
     priority                   = 100
@@ -15,6 +29,7 @@ resource "azurerm_network_security_group" "gateway_nsg" {
     destination_address_prefix = "*"
   }
   
+  # Allow standard HTTPS traffic
   security_rule {
     name                       = "Allow-HTTPS-443"
     priority                   = 105
@@ -27,6 +42,7 @@ resource "azurerm_network_security_group" "gateway_nsg" {
     destination_address_prefix = "*"
   }
 
+  # Allow standard HTTP traffic (for Certbot/Redirection)
   security_rule {
     name                       = "Allow-HTTP-80"
     priority                   = 106
@@ -39,6 +55,7 @@ resource "azurerm_network_security_group" "gateway_nsg" {
     destination_address_prefix = "*"
   }
 
+  # Enable SSH access for maintenance and provisioning
   security_rule {
     name                       = "Allow-SSH-Inbound"
     priority                   = 110
@@ -52,12 +69,14 @@ resource "azurerm_network_security_group" "gateway_nsg" {
   }
 }
 
+# Internal NSG for Region A components (Private only)
 resource "azurerm_network_security_group" "internal_nsg_a" {
   name                = "${var.resource_prefix}-internal-nsg-a"
   location            = var.region_a
   resource_group_name = azurerm_resource_group.rg.name
 }
 
+# Internal NSG for Region B components (Private only)
 resource "azurerm_network_security_group" "internal_nsg_b" {
   name                = "${var.resource_prefix}-internal-nsg-b"
   location            = var.region_b
@@ -65,7 +84,8 @@ resource "azurerm_network_security_group" "internal_nsg_b" {
 }
 
 # ==========================================
-# REGION A (4 vCPUs)
+# REGION A
+# Gateway and joke API services.
 # ==========================================
 
 module "gateway_vm" {
@@ -96,7 +116,8 @@ module "joke_vm" {
 }
 
 # ==========================================
-# REGION B (3 vCPUs)
+# REGION B 
+# Message broker, Submit and Moderate services.
 # ==========================================
 
 module "broker_vm" {

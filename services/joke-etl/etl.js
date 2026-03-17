@@ -1,3 +1,10 @@
+/**
+ * @file etl.js
+ * @description Joke ETL (Extract, Transform, Load) service.
+ * Consumes moderated jokes from RabbitMQ, transforms them, and persists them into the database.
+ * Also broadcasts newly discovered joke types back to the system.
+ */
+
 require('dotenv').config();
 const amqp = require('amqplib');
 const db = require('./db');
@@ -6,11 +13,21 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://jokes_rabbitmq';
 const MODERATED_QUEUE = 'moderated';
 const TYPE_UPDATE_EXCHANGE = 'type_update_exchange';
 
+/**
+ * Normalizes a joke type string for consistent database storage.
+ * @param {string} type - The raw joke type.
+ * @returns {string} - The normalized joke type.
+ */
 function normalizeType(type) {
     if (type === null || type === undefined) return '';
     return String(type).normalize('NFC').toLowerCase().trim();
 }
 
+/**
+ * Initializes the ETL process: connects to RabbitMQ and starts consuming moderated jokes.
+ * Handles reconnection logic if RabbitMQ becomes unavailable.
+ * @returns {Promise<void>}
+ */
 async function startETL() {
     let connection;
     try {
@@ -63,6 +80,15 @@ async function startETL() {
     }
 }
 
+/**
+ * Processes a single joke payload.
+ * Saves the joke to the database and broadcasts a type update if the joke type is new.
+ * @param {Object} payload - The joke payload containing setup, punchline, and type.
+ * @param {Object} options - Processing dependencies.
+ * @param {Object} [options.dbModule=db] - The database module to use.
+ * @param {Object} [options.channel=null] - The RabbitMQ channel for broadcasting updates.
+ * @returns {Promise<{isNewType: boolean, safeType: string}>} - The result of processing.
+ */
 async function processPayload(payload, { dbModule = db, channel = null } = {}) {
     const { setup, punchline, type } = payload || {};
     const safeType = normalizeType(type);

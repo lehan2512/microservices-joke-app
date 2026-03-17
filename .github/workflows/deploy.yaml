@@ -1,3 +1,17 @@
+# ==============================================================================
+# GitHub Actions Workflow: Build, Push, and Deploy Docker Images
+# ==============================================================================
+# Purpose:
+#   Automates the CI/CD pipeline for the joke-delivery microservices.
+#   Builds Docker images, pushes them to GitHub Container Registry (GHCR),
+#   and deploys the latest services to their respective VMs.
+#
+# Role in the System:
+#   - Orchestrates the deployment of Joke-API, Joke-ETL, Submit-App, and Moderate-App.
+#   - Manages database profiles (MySQL/MongoDB) for the Joke services.
+#   - Ensures high availability and automated updates for the application layer.
+# ==============================================================================
+
 name: Build, Push, and Deploy Docker Images
 
 on:
@@ -11,6 +25,9 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
 
 jobs:
+  # ========================================================================
+  # BUILD AND PUSH: Builds and tags Docker images for each microservice.
+  # ========================================================================
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
@@ -54,6 +71,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.image_name }}:latest
           labels: ${{ steps.meta.outputs.labels }}
 
+  # ========================================================================
+  # DEPLOY: Pulls images and restarts services on the targeted VMs.
+  # ========================================================================
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -61,9 +81,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ==========================================
-      # JOKE VM DEPLOYMENT
-      # ==========================================
+      # ========================================================================
+      # JOKE VM DEPLOYMENT: Core API and Data Processing Logic
+      # ========================================================================
       - name: Copy All Files to Joke VM
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -116,9 +136,9 @@ jobs:
             # 6. Spin up only the requested database profile and the APIs
             sudo docker compose --profile $PROFILE_NAME up -d
       
-      # ==========================================
-      # SUBMIT VM DEPLOYMENT
-      # ==========================================
+      # ========================================================================
+      # SUBMIT VM DEPLOYMENT: User Submission Endpoint
+      # ========================================================================
       - name: Copy Compose File to Submit VM
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -147,9 +167,9 @@ jobs:
             sudo docker compose pull
             sudo docker compose up -d
 
-      # ==========================================
-      # MODERATE VM DEPLOYMENT
-      # ==========================================
+      # ========================================================================
+      # MODERATE VM DEPLOYMENT: Admin Moderation Dashboard and Logic
+      # ========================================================================
       - name: Copy Compose File to Moderate VM
         uses: appleboy/scp-action@v0.1.7
         with:

@@ -1,4 +1,20 @@
+# ==============================================================================
+# Docker Compose: RabbitMQ Message Broker
+# ==============================================================================
+# Purpose:
+#   Configures and deploys the RabbitMQ service, which handles asynchronous
+#   message queuing between the Submit, Moderate, and ETL microservices.
+#
+# Role in the System:
+#   - Facilitates decoupling of services by providing a reliable message bus.
+#   - Enables the submission-to-moderation-to-database workflow.
+#   - Provides a management interface for monitoring queue health.
+# ==============================================================================
+
 services:
+  # ----------------------------------------------------------------------------
+  # RabbitMQ: The message broker core service.
+  # ----------------------------------------------------------------------------
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped

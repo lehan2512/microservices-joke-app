@@ -1,3 +1,11 @@
+# ==============================================================================
+# File: config.tf
+# Purpose: Global variable definitions for the Joke App infrastructure.
+# Role: Provides a centralized location for configuration settings such as 
+#       resource naming prefixes and regional deployments.
+# ==============================================================================
+
+# Prefix used to ensure unique naming for all Azure resources
 variable "resource_prefix" {
   type        = string
   description = "Prefix for all resources"

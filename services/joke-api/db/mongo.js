@@ -1,11 +1,14 @@
 /**
- * MongoDB Repository
- * Implements the exact same interface as the MySQL Repository.
+ * @file mongo.js
+ * @description MongoDB repository implementation for joke data access.
  */
 const { MongoClient } = require('mongodb');
 const { DatabaseError } = require('../errors');
 const config = require('../config');
 
+/**
+ * Repository class for MongoDB operations.
+ */
 class MongoRepository {
     constructor() {
         // if the database is offline. It fails fast (5s) to return a 503 to the user.
@@ -21,6 +24,12 @@ class MongoRepository {
         });
     }
 
+    /**
+     * Ensures that the MongoDB client is connected.
+     * Uses a connection lock to prevent multiple simultaneous connection attempts.
+     * @returns {Promise<void>}
+     * @throws {DatabaseError} If connection fails.
+     */
     async ensureConnected() {
         if (this.db) return;
 
@@ -43,6 +52,11 @@ class MongoRepository {
         await this.connectionLock;
     }
 
+    /**
+     * Handles network errors by resetting the connection state.
+     * Forces reconnection on the next request.
+     * @param {Error} err - The error caught during an operation.
+     */
     handleConnectionDrop(err) {
         if (err.name === 'MongoNetworkError' || err.name === 'MongoServerSelectionError' || err.name === 'MongoTopologyClosedError') {
             console.error("MongoDB network drop detected. Forcing reconnection on next request...");
@@ -51,6 +65,12 @@ class MongoRepository {
         }
     }
 
+    /**
+     * Fetches a joke type by its name.
+     * @param {string} name - The name of the type to find.
+     * @returns {Promise<Object|null>} The type document or null if not found.
+     * @throws {DatabaseError} If the database operation fails.
+     */
     async getTypeByName(name) {
         await this.ensureConnected();
         try {
@@ -64,6 +84,12 @@ class MongoRepository {
         }
     }
 
+    /**
+     * Gets the total count of jokes, optionally filtered by type.
+     * @param {Object} [typeRow=null] - The type document to filter by.
+     * @returns {Promise<number>} The number of jokes found.
+     * @throws {DatabaseError} If the database operation fails.
+     */
     async getJokeCount(typeRow = null) {
         await this.ensureConnected();
         try {
@@ -75,6 +101,13 @@ class MongoRepository {
         }
     }
 
+    /**
+     * Retrieves a single joke by its offset from the start of the collection (or filtered list).
+     * @param {Object} [typeRow=null] - The type document to filter by.
+     * @param {number} [offset=0] - The zero-based index of the joke to retrieve.
+     * @returns {Promise<Object|null>} The joke document or null if not found.
+     * @throws {DatabaseError} If the database operation fails.
+     */
     async getJokeByOffset(typeRow = null, offset = 0) {
         await this.ensureConnected();
         try {
@@ -92,6 +125,11 @@ class MongoRepository {
         }
     }
 
+    /**
+     * Retrieves all available joke types from the database.
+     * @returns {Promise<Array<string>>} A list of joke type names.
+     * @throws {DatabaseError} If the database operation fails.
+     */
     async getTypes() {
         await this.ensureConnected();
         try {

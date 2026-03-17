@@ -1,9 +1,16 @@
+/**
+ * @file db.js
+ * @description Database provider abstraction for the Joke ETL service. 
+ * Supports both MySQL and MongoDB based on environment configuration.
+ */
+
 require('dotenv').config();
 const mysql = require('mysql2/promise');
 const { MongoClient } = require('mongodb');
 
 /**
  * MySQL Provider with IP logging and Pool Refresh.
+ * Handles database operations for MySQL.
  */
 class MySQLProvider {
     constructor() {
@@ -28,12 +35,24 @@ class MySQLProvider {
         });
     }
 
+    /**
+     * Re-initializes the MySQL connection pool.
+     * Called when a connection loss is detected.
+     * @returns {Promise<void>}
+     */
     async refreshPool() {
         console.warn(`[DB] Connection lost. Purging stale pool and re-resolving ${this.config.host}...`);
         try { await this.pool.end(); } catch (e) {}
         this.pool = mysql.createPool(this.config);
     }
 
+    /**
+     * Inserts a joke and ensures its type exists in the database using a transaction.
+     * @param {string} setup - The setup of the joke.
+     * @param {string} punchline - The punchline of the joke.
+     * @param {string} typeName - The category/type of the joke.
+     * @returns {Promise<boolean>} - Returns true if a new type was created.
+     */
     async insertJokeAndType(setup, punchline, typeName) {
         let connection;
         try {
@@ -63,6 +82,10 @@ class MySQLProvider {
     }
 }
 
+/**
+ * Mongo Provider for joke storage.
+ * Handles database operations for MongoDB.
+ */
 class MongoProvider {
     constructor() {
         const uri = process.env.MONGO_URI || 'mongodb://jokes_mongo:27017';
@@ -75,10 +98,21 @@ class MongoProvider {
         }).catch(err => console.error('[DB] Mongo connection failed:', err.message));
     }
 
+    /**
+     * Ensures that the MongoDB connection is established before performing operations.
+     * @returns {Promise<void>}
+     */
     async ensureConnected() {
         if (!this.db) await this.connectPromise;
     }
 
+    /**
+     * Inserts a joke and ensures its type exists in the MongoDB collection.
+     * @param {string} setup - The setup of the joke.
+     * @param {string} punchline - The punchline of the joke.
+     * @param {string} typeName - The category/type of the joke.
+     * @returns {Promise<boolean>} - Returns true if a new type was created.
+     */
     async insertJokeAndType(setup, punchline, typeName) {
         await this.ensureConnected();
         let isNewType = false;

@@ -1,3 +1,11 @@
+# ==============================================================================
+# File: outputs.tf
+# Purpose: Exports key infrastructure information.
+# Role: Provides necessary IP addresses and FQDNs for manual configuration, 
+#       application properties, and Kong Gateway routing.
+# ==============================================================================
+
+# Public access point for external clients
 output "gateway_public_ip" {
   value       = azurerm_public_ip.gateway_ip.ip_address
   description = "Your single HTTP origin."

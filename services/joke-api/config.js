@@ -1,6 +1,8 @@
 /**
- * Database and Application Configuration
- * Centralizes environment variables to prevent hardcoded secrets and limits.
+ * @file config.js
+ * @description Database and Application Configuration.
+ * Centralizes environment variables to prevent hardcoded secrets and limits,
+ * and provides configuration objects for both MySQL and MongoDB.
  */
 require('dotenv').config();
 

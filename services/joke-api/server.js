@@ -1,5 +1,6 @@
 /**
- * Joke API Server
+ * @file server.js
+ * @description Joke API Server.
  * Entry point for the Express application. Handles HTTP requests,
  * routes them to the Service layer, and formats HTTP responses/errors.
  */
@@ -14,7 +15,12 @@ const PORT = process.env.PORT || 3000;
 // Serve static HTML/JS for the UI
 app.use(express.static('public'));
 
-// Endpoint: Get Random Joke(s)
+/**
+ * GET /joke/:type
+ * Retrieves random jokes of a specified type.
+ * @param {string} type - The joke category.
+ * @query {number} [count=1] - Number of jokes to return.
+ */
 app.get('/joke/:type', async (req, res) => {
     const type = req.params.type;
     const count = req.query.count || 1;
@@ -40,7 +46,10 @@ app.get('/joke/:type', async (req, res) => {
     }
 });
 
-// Endpoint: Get Types
+/**
+ * GET /types
+ * Retrieves all available joke types.
+ */
 app.get('/types', async (req, res) => {
     try {
         const types = await jokeService.getTypes();

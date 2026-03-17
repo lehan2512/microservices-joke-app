@@ -1,9 +1,27 @@
 #!/usr/bin/env node
+/**
+ * @fileoverview Script to manually publish moderated jokes to RabbitMQ.
+ * 
+ * This utility allows developers to bypass the submission/moderation flow
+ * and directly inject jokes into the 'moderated' queue for processing by the ETL service.
+ */
+
 const amqp = require('amqplib');
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 const MODERATED_QUEUE = 'moderated';
 
+/**
+ * Publishes a joke to the RabbitMQ 'moderated' queue.
+ * 
+ * @async
+ * @function publish
+ * @param {string} setup - The setup part of the joke.
+ * @param {string} punchline - The punchline part of the joke.
+ * @param {string} type - The category/type of the joke.
+ * @returns {Promise<void>}
+ * @throws {Error} Throws an error if the connection or publishing fails.
+ */
 async function publish(setup, punchline, type) {
     let connection;
     try {

@@ -1,3 +1,10 @@
+/**
+ * @file server.js
+ * @description Express server for the Joke Moderation microservice.
+ * Handles user authentication through Auth0 and provides endpoints for moderators to
+ * fetch jokes from the queue and submit approved jokes for persistence.
+ */
+
 require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
@@ -9,6 +16,9 @@ const PORT = process.env.PORT || 3300;
 app.set('trust proxy', true);
 const externalBaseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:8000/moderate-api';
 
+/**
+ * Auth0 configuration for OIDC authentication.
+ */
 const config = {
   authRequired: true,
   auth0Logout: true,
@@ -24,7 +34,12 @@ app.use(auth(config));
 app.use(express.static('public'));
 app.use(express.json());
 
-// Endpoint: Get Types (Reads from the Docker Volume cache as mandated by ECST)
+/**
+ * GET /types
+ * @description Retrieves the current list of joke types from the local cache.
+ * @name GetTypes
+ * @route {GET} /types
+ */
 app.get('/types', (req, res) => {
     try {
         const types = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
@@ -34,7 +49,12 @@ app.get('/types', (req, res) => {
     }
 });
 
-// Endpoint: Get a single joke to moderate
+/**
+ * GET /moderate
+ * @description Pulls a single joke from the submission queue for moderation.
+ * @name GetJokeToModerate
+ * @route {GET} /moderate
+ */
 app.get('/moderate', async (req, res) => {
     try {
         const joke = await getJokeFromQueue();
@@ -48,7 +68,15 @@ app.get('/moderate', async (req, res) => {
     }
 });
 
-// Endpoint: Submit the moderated joke
+/**
+ * POST /moderated
+ * @description Submits an approved joke to the moderated queue.
+ * @name SubmitModeratedJoke
+ * @route {POST} /moderated
+ * @body {string} setup - Joke setup.
+ * @body {string} punchline - Joke punchline.
+ * @body {string} type - Joke type.
+ */
 app.post('/moderated', async (req, res) => {
     const { setup, punchline, type } = req.body;
     if (!setup || !punchline || !type) {

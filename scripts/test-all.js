@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+/**
+ * @fileoverview Main test orchestrator for the Joke system.
+ * 
+ * This script automates the execution of unit tests for all microservices
+ * within the project and proceeds to run the system-wide resilience tests
+ * to ensure overall system stability and performance.
+ */
+
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');

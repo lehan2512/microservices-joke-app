@@ -1,7 +1,15 @@
+# ==============================================================================
+# File: deploy.tf
+# Purpose: Orchestrates the deployment of application components to VMs.
+# Role: Uses null_resources and provisioners to bootstrap Docker environments, 
+#       transfer configuration files, and start services via Docker Compose.
+# ==============================================================================
+
 # ==========================================
 # 1. GATEWAY DEPLOYMENT
 # ==========================================
 resource "null_resource" "deploy_gateway" {
+  # Redepoy if compose file or kong config changes
   triggers = {
     compose_md5 = filemd5("../deploy/gateway-compose.yaml")
     kong_md5    = filemd5("../api-gateway/kong.yaml")

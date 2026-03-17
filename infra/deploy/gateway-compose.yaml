@@ -1,3 +1,16 @@
+# ==============================================================================
+# Docker Compose: Kong API Gateway
+# ==============================================================================
+# Purpose:
+#   Deploys the Kong API Gateway in DB-less mode, using the declarative 
+#   configuration specified in kong.yaml.
+#
+# Role in the System:
+#   - Acts as the main entry point (reverse proxy) for all incoming API requests.
+#   - Handles TLS/SSL termination using Let's Encrypt certificates.
+#   - Routes traffic based on path-based rules to the internal microservices.
+# ==============================================================================
+
 services:
   kong:
     image: kong:latest

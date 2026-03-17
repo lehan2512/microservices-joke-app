@@ -1,3 +1,15 @@
+# ==============================================================================
+# Docker Compose: Submit Microservice
+# ==============================================================================
+# Purpose:
+#   Deploys the Submit application, allowing users to propose new jokes 
+#   for moderation and eventual inclusion in the system.
+#
+# Role in the System:
+#   - Provides a public-facing API for joke submissions.
+#   - Forwards valid submissions to the RabbitMQ broker for the moderation queue.
+# ==============================================================================
+
 services:
   submit-app:
     image: ghcr.io/lehan2512/submit-app:latest

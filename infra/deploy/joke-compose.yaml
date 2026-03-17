@@ -1,3 +1,18 @@
+# ==============================================================================
+# Docker Compose: Core Joke Services (API, ETL, and Databases)
+# ==============================================================================
+# Purpose:
+#   Orchestrates the deployment of the Joke API, the Joke ETL (Extract, 
+#   Transform, Load) service, and the underlying databases (MySQL and MongoDB).
+#
+# Role in the System:
+#   - joke-api: Serves jokes to clients and handles GET/POST requests.
+#   - joke-etl: Processes moderated jokes from RabbitMQ and stores them.
+#   - mysql: Relational storage for structured joke data.
+#   - mongo: Document-based storage for flexible joke schema (alternative DB).
+#   - Uses Docker Profiles to dynamically select the active database.
+# ==============================================================================
+
 services:
   mysql:
     image: mysql:8.0
@@ -22,7 +37,7 @@ services:
     profiles: ["mongo"]
     volumes:
       - mongo_data:/data/db
-      - ./init.js:/docker-entrypoint-initdb.d/init.js 
+      - ./init.js:/docker-entrypoint-initdb.d/init.js
 
   joke-api:
     image: ghcr.io/lehan2512/joke-api:latest
@@ -30,7 +45,7 @@ services:
     ports: ["4000:3000"]
     environment:
       - PORT=3000
-      - DB_TYPE=${DB_TYPE:-MYSQL} 
+      - DB_TYPE=${DB_TYPE:-MYSQL}
       - DB_HOST=mysql
       - MONGO_URI=mongodb://mongo:27017
     volumes:
