@@ -6,7 +6,7 @@ services:
     environment:
       - PORT=3300
       - RABBITMQ_URL=amqp://10.1.1.10
-      - AUTH0_BASE_URL=http://20.205.40.175/moderate-api
+      - AUTH0_BASE_URL=https://lehan-joke.eastasia.cloudapp.azure.com/moderate-api
       - AUTH0_CLIENT_ID=w7DnLzgXwsOG8XgORbCVHH3LhGIMMsc6
       - AUTH0_CLIENT_SECRET=-QqchSKaUvkCRDsKqzoW7-9gXP8VZ-KyY3UAWTs6nxl2YzoGv55Qk53Xe71oQp3w
     volumes:
