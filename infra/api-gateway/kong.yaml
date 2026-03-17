@@ -8,12 +8,14 @@ services:
         paths:
           - /joke-api
         strip_path: true
+        protocols: ["https"]
+        https_redirect_status_code: 301
     plugins:
       - name: rate-limiting
         config:
-          minute: 8  # Keep demo-friendly low limit for now; increase if needed
+          minute: 8  
           policy: local
-          hide_client_headers: false  # ensure Kong forwards X-RateLimit-* and Retry-After headers to clients
+          hide_client_headers: false 
 
   # 2. Submit Microservice
   - name: submit-service
@@ -23,6 +25,8 @@ services:
         paths:
           - /submit-api
         strip_path: true
+        protocols: ["https"]
+        https_redirect_status_code: 301
 
   # 3. Moderate Microservice
   - name: moderate-service
@@ -32,3 +36,5 @@ services:
         paths:
           - /moderate-api
         strip_path: true
+        protocols: ["https"]
+        https_redirect_status_code: 301

@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # FIXED: Updated context paths to match your repository structure
           - image_name: joke-api
             context: ./services/joke-api
           - image_name: joke-etl

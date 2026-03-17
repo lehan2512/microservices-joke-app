@@ -3,7 +3,7 @@ name: Deploy Infrastructure (Gateway & Broker)
 on:
   push:
     paths:
-      # This ensures this workflow ONLY runs if you modify infrastructure files
+      # workflow ONLY runs if you modify infrastructure files
       - 'infra/api-gateway/**'
       - 'infra/deploy/gateway-compose.yaml'
       - 'infra/deploy/broker-compose.yaml'
