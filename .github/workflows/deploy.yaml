@@ -74,7 +74,7 @@ jobs:
           proxy_host: ${{ secrets.GATEWAY_IP }}
           proxy_username: azureuser
           proxy_key: ${{ secrets.VM_SSH_KEY }}
-          source: "infra/deploy/joke-compose.yaml,infra/db-init/init.sql"
+          source: "infra/deploy/joke-compose.yaml,infra/db-init/init.sql,infra/db-init/init.js"
           target: "/home/azureuser/"
           strip_components: 2
           timeout: 60s
